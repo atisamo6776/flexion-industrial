@@ -111,16 +111,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Liste
 $sections = [];
-$stmt     = $pdo->query('SELECT * FROM home_sections ORDER BY sort_order ASC, id ASC');
-foreach ($stmt as $row) {
-    $row['content'] = [];
-    if (!empty($row['content_json'])) {
-        $data = json_decode($row['content_json'], true);
-        if (is_array($data)) {
-            $row['content'] = $data;
+try {
+    $stmt = $pdo->query('SELECT * FROM home_sections ORDER BY sort_order ASC, id ASC');
+    foreach ($stmt as $row) {
+        $row['content'] = [];
+        if (!empty($row['content_json'])) {
+            $data = json_decode($row['content_json'], true);
+            if (is_array($data)) {
+                $row['content'] = $data;
+            }
         }
+        $sections[] = $row;
     }
-    $sections[] = $row;
+} catch (Throwable $e) {
+    $error = 'Ana sayfa bölümleri alınamadı. Lütfen <a href="migrate.php">migrasyonu</a> çalıştırın.';
 }
 
 $token = csrf_token();

@@ -11,9 +11,13 @@ if (!in_array($sort, ['relevance', 'az', 'za'], true)) {
     $sort = 'relevance';
 }
 
-$stmt = $pdo->prepare('SELECT * FROM categories WHERE id = :id AND is_active = 1 LIMIT 1');
-$stmt->execute([':id' => $categoryId]);
-$category = $stmt->fetch();
+try {
+    $stmt = $pdo->prepare('SELECT * FROM categories WHERE id = :id AND is_active = 1 LIMIT 1');
+    $stmt->execute([':id' => $categoryId]);
+    $category = $stmt->fetch();
+} catch (Throwable $e) {
+    $category = null;
+}
 
 if (!$category) {
     http_response_code(404);
@@ -37,9 +41,15 @@ if ($sort === 'az') {
     $orderSql = 'ORDER BY name DESC';
 }
 
-$countStmt = $pdo->prepare('SELECT COUNT(*) FROM products WHERE category_id = :cid AND is_active = 1');
-$countStmt->execute([':cid' => $categoryId]);
-$totalProducts = (int) $countStmt->fetchColumn();
+$totalProducts = 0;
+$products      = [];
+try {
+    $countStmt = $pdo->prepare('SELECT COUNT(*) FROM products WHERE category_id = :cid AND is_active = 1');
+    $countStmt->execute([':cid' => $categoryId]);
+    $totalProducts = (int) $countStmt->fetchColumn();
+} catch (Throwable $e) {
+    $totalProducts = 0;
+}
 
 $perPage = 16;
 $page    = max(1, (int) ($_GET['page'] ?? 1));
@@ -49,12 +59,16 @@ if ($page > $maxPage) {
 }
 $offset = ($page - 1) * $perPage;
 
-$stmt = $pdo->prepare("SELECT * FROM products WHERE category_id = :cid AND is_active = 1 $orderSql LIMIT :limit OFFSET :offset");
-$stmt->bindValue(':cid', $categoryId, PDO::PARAM_INT);
-$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-$stmt->execute();
-$products = $stmt->fetchAll();
+try {
+    $stmt = $pdo->prepare("SELECT * FROM products WHERE category_id = :cid AND is_active = 1 $orderSql LIMIT :limit OFFSET :offset");
+    $stmt->bindValue(':cid', $categoryId, PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $products = $stmt->fetchAll();
+} catch (Throwable $e) {
+    $products = [];
+}
 ?>
 
 <section class="py-5">

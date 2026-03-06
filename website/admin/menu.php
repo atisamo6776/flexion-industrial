@@ -70,7 +70,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Liste
-$items = $pdo->query('SELECT * FROM menu_items ORDER BY sort_order ASC, id ASC')->fetchAll();
+try {
+    $items = $pdo->query('SELECT * FROM menu_items ORDER BY sort_order ASC, id ASC')->fetchAll();
+} catch (Throwable $e) {
+    $items = [];
+    $error = 'Menü listesi alınamadı. Lütfen <a href="migrate.php">migrasyonu</a> çalıştırın.';
+}
 
 // Hızlı linkler için aktif kurumsal sayfalar
 $pageLinks = [];

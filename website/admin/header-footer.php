@@ -11,12 +11,16 @@ $success = null;
 
 function hf_fetch_settings(PDO $pdo): array
 {
-    $stmt = $pdo->query('SELECT setting_key, setting_value FROM settings');
-    $out  = [];
-    foreach ($stmt as $row) {
-        $out[$row['setting_key']] = $row['setting_value'];
+    try {
+        $stmt = $pdo->query('SELECT setting_key, setting_value FROM settings');
+        $out  = [];
+        foreach ($stmt as $row) {
+            $out[$row['setting_key']] = $row['setting_value'];
+        }
+        return $out;
+    } catch (Throwable $e) {
+        return [];
     }
-    return $out;
 }
 
 function hf_save_setting(PDO $pdo, string $key, ?string $value): void
@@ -74,12 +78,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $flTitle  = trim($_POST['fl_title'] ?? '');
         $flUrl    = trim($_POST['fl_url'] ?? '');
         if ($colKey && $flTitle && $flUrl) {
-            $stmtSort = $pdo->prepare('SELECT IFNULL(MAX(sort_order),0)+1 FROM footer_links WHERE column_key = ?');
-            $stmtSort->execute([$colKey]);
-            $flSort = (int) $stmtSort->fetchColumn();
-            $pdo->prepare('INSERT INTO footer_links (column_key, column_label, title, url, sort_order, is_active) VALUES (?,?,?,?,?,1)')
-                ->execute([$colKey, $colLabel, $flTitle, $flUrl, $flSort]);
-            $success = 'Link eklendi.';
+            try {
+                $stmtSort = $pdo->prepare('SELECT IFNULL(MAX(sort_order),0)+1 FROM footer_links WHERE column_key = ?');
+                $stmtSort->execute([$colKey]);
+                $flSort = (int) $stmtSort->fetchColumn();
+                $pdo->prepare('INSERT INTO footer_links (column_key, column_label, title, url, sort_order, is_active) VALUES (?,?,?,?,?,1)')
+                    ->execute([$colKey, $colLabel, $flTitle, $flUrl, $flSort]);
+                $success = 'Link eklendi.';
+            } catch (Throwable $e) {
+                $error = 'Link eklenemedi. Lütfen <a href="migrate.php">migrasyonu</a> çalıştırın.';
+            }
         } else {
             $error = 'Sütun, başlık ve URL zorunludur.';
         }
@@ -87,33 +95,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['delete_footer_link'])) {
         $flId = (int) ($_POST['fl_id'] ?? 0);
         if ($flId > 0) {
-            $pdo->prepare('DELETE FROM footer_links WHERE id = ?')->execute([$flId]);
-            $success = 'Link silindi.';
+            try {
+                $pdo->prepare('DELETE FROM footer_links WHERE id = ?')->execute([$flId]);
+                $success = 'Link silindi.';
+            } catch (Throwable $e) {
+                $error = 'Silinemedi.';
+            }
         }
 
     } elseif (isset($_POST['toggle_footer_link'])) {
         $flId = (int) ($_POST['fl_id'] ?? 0);
         if ($flId > 0) {
-            $pdo->prepare('UPDATE footer_links SET is_active = NOT is_active WHERE id = ?')->execute([$flId]);
-            $success = 'Link durumu güncellendi.';
+            try {
+                $pdo->prepare('UPDATE footer_links SET is_active = NOT is_active WHERE id = ?')->execute([$flId]);
+                $success = 'Link durumu güncellendi.';
+            } catch (Throwable $e) {
+                $error = 'Güncellenemedi.';
+            }
         }
 
     } elseif (isset($_POST['save_footer_link_order'])) {
         $ids  = $_POST['fl_order'] ?? [];
         $i    = 1;
-        $stmt = $pdo->prepare('UPDATE footer_links SET sort_order = ? WHERE id = ?');
-        foreach ($ids as $fid) {
-            $stmt->execute([$i++, (int) $fid]);
+        try {
+            $stmt = $pdo->prepare('UPDATE footer_links SET sort_order = ? WHERE id = ?');
+            foreach ($ids as $fid) {
+                $stmt->execute([$i++, (int) $fid]);
+            }
+            $success = 'Sıralama güncellendi.';
+        } catch (Throwable $e) {
+            $error = 'Sıralama kaydedilemedi.';
         }
-        $success = 'Sıralama güncellendi.';
 
     } elseif (isset($_POST['update_column_label'])) {
         $colKey   = trim($_POST['fl_column_key'] ?? '');
         $colLabel = trim($_POST['fl_column_label'] ?? '');
         if ($colKey && $colLabel) {
-            $pdo->prepare('UPDATE footer_links SET column_label = ? WHERE column_key = ?')
-                ->execute([$colLabel, $colKey]);
-            $success = 'Sütun başlığı güncellendi.';
+            try {
+                $pdo->prepare('UPDATE footer_links SET column_label = ? WHERE column_key = ?')
+                    ->execute([$colLabel, $colKey]);
+                $success = 'Sütun başlığı güncellendi.';
+            } catch (Throwable $e) {
+                $error = 'Güncellenemedi.';
+            }
         }
     }
 }
@@ -122,10 +146,16 @@ $settings = hf_fetch_settings($pdo);
 $token    = csrf_token();
 
 // Footer linkleri (column_key'e göre grupla)
-$footerLinksRaw = $pdo->query('SELECT * FROM footer_links ORDER BY column_key ASC, sort_order ASC, id ASC')->fetchAll();
+$footerLinksRaw   = [];
 $footerLinksByCol = [];
-foreach ($footerLinksRaw as $fl) {
-    $footerLinksByCol[$fl['column_key']][] = $fl;
+$footerLinksError = null;
+try {
+    $footerLinksRaw = $pdo->query('SELECT * FROM footer_links ORDER BY column_key ASC, sort_order ASC, id ASC')->fetchAll();
+    foreach ($footerLinksRaw as $fl) {
+        $footerLinksByCol[$fl['column_key']][] = $fl;
+    }
+} catch (Throwable $e) {
+    $footerLinksError = 'footer_links tablosu bulunamadı. Lütfen <a href="migrate.php">migrasyonu</a> çalıştırın.';
 }
 
 include __DIR__ . '/partials_header.php';
@@ -246,6 +276,9 @@ include __DIR__ . '/partials_header.php';
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white"><strong>Footer Linkleri</strong></div>
             <div class="card-body">
+                <?php if ($footerLinksError): ?>
+                    <div class="alert alert-warning py-2"><?= $footerLinksError ?></div>
+                <?php endif; ?>
                 <p class="small text-muted mb-3">
                     Footer'daki sütun başlıklarını ve linkleri buradan yönetin. Sütun anahtarı:
                     <code>company</code>, <code>products</code>, <code>contact</code> gibi benzersiz tanımlayıcılardır.

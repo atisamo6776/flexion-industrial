@@ -97,8 +97,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$categories = $pdo->query('SELECT * FROM categories ORDER BY sort_order ASC, name ASC')->fetchAll();
-$token      = csrf_token();
+try {
+    $categories = $pdo->query('SELECT * FROM categories ORDER BY sort_order ASC, name ASC')->fetchAll();
+} catch (Throwable $e) {
+    $categories = [];
+    $error = 'Kategori listesi alınamadı. Lütfen <a href="migrate.php">migrasyonu</a> çalıştırın.';
+}
+$token = csrf_token();
 
 include __DIR__ . '/partials_header.php';
 ?>

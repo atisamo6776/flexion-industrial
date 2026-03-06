@@ -12,9 +12,13 @@ if (!$slug) {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT * FROM pages WHERE slug = :slug AND is_active = 1 LIMIT 1');
-$stmt->execute([':slug' => $slug]);
-$page = $stmt->fetch();
+try {
+    $stmt = $pdo->prepare('SELECT * FROM pages WHERE slug = :slug AND is_active = 1 LIMIT 1');
+    $stmt->execute([':slug' => $slug]);
+    $page = $stmt->fetch();
+} catch (Throwable $e) {
+    $page = null;
+}
 
 if (!$page) {
     http_response_code(404);

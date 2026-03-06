@@ -92,17 +92,22 @@ function get_flash(string $key): ?string
 
 /**
  * settings tablosundan tek ayar değeri getirir.
+ * Tablo yoksa veya bağlantı hatası varsa default döner (500 önlenir).
  */
 function get_setting(string $key, ?string $default = null): ?string
 {
     static $settings = null;
 
     if ($settings === null) {
-        $pdo = db();
-        $stmt = $pdo->query('SELECT setting_key, setting_value FROM settings');
-        $settings = [];
-        foreach ($stmt as $row) {
-            $settings[$row['setting_key']] = $row['setting_value'];
+        try {
+            $pdo  = db();
+            $stmt = $pdo->query('SELECT setting_key, setting_value FROM settings');
+            $settings = [];
+            foreach ($stmt as $row) {
+                $settings[$row['setting_key']] = $row['setting_value'];
+            }
+        } catch (Throwable $e) {
+            $settings = [];
         }
     }
 
@@ -110,13 +115,17 @@ function get_setting(string $key, ?string $default = null): ?string
 }
 
 /**
- * Ana menüyü getirir.
+ * Ana menüyü getirir. Tablo yoksa boş dizi döner.
  */
 function get_main_menu(): array
 {
-    $pdo = db();
-    $stmt = $pdo->query('SELECT * FROM menu_items WHERE is_active = 1 ORDER BY sort_order ASC, id ASC');
-    $items = $stmt->fetchAll();
+    try {
+        $pdo   = db();
+        $stmt  = $pdo->query('SELECT * FROM menu_items WHERE is_active = 1 ORDER BY sort_order ASC, id ASC');
+        $items = $stmt->fetchAll();
+    } catch (Throwable $e) {
+        return [];
+    }
 
     // Basit hiyerarşi
     $tree = [];
@@ -142,22 +151,31 @@ function get_main_menu(): array
 }
 
 /**
- * Aktif kategorileri (üst seviye) getirir.
+ * Aktif kategorileri (üst seviye) getirir. Tablo yoksa boş dizi döner.
  */
 function get_active_categories(): array
 {
-    $pdo = db();
-    $stmt = $pdo->query('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC');
-    return $stmt->fetchAll();
+    try {
+        $pdo  = db();
+        $stmt = $pdo->query('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC');
+        return $stmt->fetchAll();
+    } catch (Throwable $e) {
+        return [];
+    }
 }
 
 /**
- * Ana sayfa bölümlerini getirir.
+ * Ana sayfa bölümlerini getirir. Tablo yoksa boş dizi döner.
  */
 function get_home_sections(): array
 {
-    $pdo = db();
-    $stmt = $pdo->query('SELECT * FROM home_sections WHERE is_active = 1 ORDER BY sort_order ASC, id ASC');
+    try {
+        $pdo  = db();
+        $stmt = $pdo->query('SELECT * FROM home_sections WHERE is_active = 1 ORDER BY sort_order ASC, id ASC');
+    } catch (Throwable $e) {
+        return [];
+    }
+
     $sections = [];
     foreach ($stmt as $row) {
         $row['content'] = [];
@@ -174,14 +192,18 @@ function get_home_sections(): array
 }
 
 /**
- * Son haberleri getirir.
+ * Son haberleri getirir. Tablo yoksa boş dizi döner.
  */
 function get_latest_news(int $limit = 3): array
 {
-    $pdo = db();
-    $stmt = $pdo->prepare('SELECT * FROM news WHERE is_active = 1 ORDER BY COALESCE(published_at, NOW()) DESC, id DESC LIMIT :limit');
-    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-    $stmt->execute();
-    return $stmt->fetchAll();
+    try {
+        $pdo  = db();
+        $stmt = $pdo->prepare('SELECT * FROM news WHERE is_active = 1 ORDER BY COALESCE(published_at, NOW()) DESC, id DESC LIMIT :limit');
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    } catch (Throwable $e) {
+        return [];
+    }
 }
 

@@ -11,12 +11,16 @@ $success = null;
 
 function settings_get_all(PDO $pdo): array
 {
-    $stmt = $pdo->query('SELECT setting_key, setting_value FROM settings');
-    $out  = [];
-    foreach ($stmt as $row) {
-        $out[$row['setting_key']] = $row['setting_value'];
+    try {
+        $stmt = $pdo->query('SELECT setting_key, setting_value FROM settings');
+        $out  = [];
+        foreach ($stmt as $row) {
+            $out[$row['setting_key']] = $row['setting_value'];
+        }
+        return $out;
+    } catch (Throwable $e) {
+        return [];
     }
-    return $out;
 }
 
 function settings_save(PDO $pdo, string $key, ?string $value): void

@@ -83,6 +83,13 @@ require_admin_login();
                 <a href="profile.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'profile.php' ? 'active' : '' ?>">
                     <i class="bi bi-person-lock me-2"></i>Profil / Şifre
                 </a>
+                <hr class="border-secondary my-1">
+                <a href="health.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'health.php' ? 'active' : '' ?>">
+                    <i class="bi bi-heart-pulse me-2"></i>Sağlık Kontrolü
+                </a>
+                <a href="migrate.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'migrate.php' ? 'active' : '' ?>">
+                    <i class="bi bi-database-gear me-2"></i>DB Migrasyonu
+                </a>
                 <a href="logout.php" class="nav-link py-2 px-2">
                     <i class="bi bi-box-arrow-right me-2"></i>Çıkış
                 </a>

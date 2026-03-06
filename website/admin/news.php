@@ -97,8 +97,13 @@ if ($editId) {
     $editNews = $stmt->fetch() ?: null;
 }
 
-$newsList = $pdo->query('SELECT id, title, published_at, is_active FROM news ORDER BY IFNULL(published_at, id) DESC')->fetchAll();
-$token    = csrf_token();
+try {
+    $newsList = $pdo->query('SELECT id, title, published_at, is_active FROM news ORDER BY IFNULL(published_at, id) DESC')->fetchAll();
+} catch (Throwable $e) {
+    $newsList = [];
+    $error = 'Haber listesi alınamadı. Lütfen <a href="migrate.php">migrasyonu</a> çalıştırın.';
+}
+$token = csrf_token();
 
 include __DIR__ . '/partials_header.php';
 ?>

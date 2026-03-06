@@ -109,8 +109,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pages  = $pdo->query('SELECT * FROM pages ORDER BY sort_order ASC, id ASC')->fetchAll();
-$token  = csrf_token();
+try {
+    $pages = $pdo->query('SELECT * FROM pages ORDER BY sort_order ASC, id ASC')->fetchAll();
+} catch (Throwable $e) {
+    $pages = [];
+    $error = 'Sayfa listesi alınamadı. Lütfen <a href="migrate.php">migrasyonu</a> çalıştırın.';
+}
+$token = csrf_token();
 
 $editId   = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 $editPage = null;

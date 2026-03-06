@@ -5,9 +5,13 @@ require_once __DIR__ . '/includes/header.php';
 $pdo = db();
 $productId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
-$stmt = $pdo->prepare('SELECT p.*, c.name AS category_name FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = :id AND p.is_active = 1 LIMIT 1');
-$stmt->execute([':id' => $productId]);
-$product = $stmt->fetch();
+try {
+    $stmt = $pdo->prepare('SELECT p.*, c.name AS category_name FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = :id AND p.is_active = 1 LIMIT 1');
+    $stmt->execute([':id' => $productId]);
+    $product = $stmt->fetch();
+} catch (Throwable $e) {
+    $product = null;
+}
 
 if (!$product) {
     http_response_code(404);
@@ -23,40 +27,55 @@ if (!$product) {
 }
 
 // Regulations
-$stmt = $pdo->prepare('SELECT * FROM product_regulations WHERE product_id = :pid AND is_active = 1 ORDER BY sort_order ASC, id ASC');
-$stmt->execute([':pid' => $productId]);
-$regulations = $stmt->fetchAll();
+$regulations = [];
+try {
+    $stmt = $pdo->prepare('SELECT * FROM product_regulations WHERE product_id = :pid AND is_active = 1 ORDER BY sort_order ASC, id ASC');
+    $stmt->execute([':pid' => $productId]);
+    $regulations = $stmt->fetchAll();
+} catch (Throwable $e) { /* tablo yoksa boş */ }
 
 // Spec tables + rows
-$stmt = $pdo->prepare('SELECT * FROM product_spec_tables WHERE product_id = :pid AND is_active = 1 ORDER BY sort_order ASC, id ASC');
-$stmt->execute([':pid' => $productId]);
-$specTables = $stmt->fetchAll();
-
+$specTables      = [];
 $specRowsByTable = [];
-if ($specTables) {
-    $tableIds = array_column($specTables, 'id');
-    $in       = implode(',', array_fill(0, count($tableIds), '?'));
-    $rowsStmt = $pdo->prepare("SELECT * FROM product_specs WHERE table_id IN ($in) AND is_active = 1 ORDER BY sort_order ASC, id ASC");
-    $rowsStmt->execute($tableIds);
-    foreach ($rowsStmt as $row) {
-        $specRowsByTable[$row['table_id']][] = $row;
+try {
+    $stmt = $pdo->prepare('SELECT * FROM product_spec_tables WHERE product_id = :pid AND is_active = 1 ORDER BY sort_order ASC, id ASC');
+    $stmt->execute([':pid' => $productId]);
+    $specTables = $stmt->fetchAll();
+
+    if ($specTables) {
+        $tableIds = array_column($specTables, 'id');
+        $in       = implode(',', array_fill(0, count($tableIds), '?'));
+        $rowsStmt = $pdo->prepare("SELECT * FROM product_specs WHERE table_id IN ($in) AND is_active = 1 ORDER BY sort_order ASC, id ASC");
+        $rowsStmt->execute($tableIds);
+        foreach ($rowsStmt as $row) {
+            $specRowsByTable[$row['table_id']][] = $row;
+        }
     }
-}
+} catch (Throwable $e) { /* tablo yoksa boş */ }
 
 // Ek görseller
-$imgStmt = $pdo->prepare('SELECT * FROM product_images WHERE product_id = :pid ORDER BY sort_order ASC, id ASC');
-$imgStmt->execute([':pid' => $productId]);
-$extraImages = $imgStmt->fetchAll();
+$extraImages = [];
+try {
+    $imgStmt = $pdo->prepare('SELECT * FROM product_images WHERE product_id = :pid ORDER BY sort_order ASC, id ASC');
+    $imgStmt->execute([':pid' => $productId]);
+    $extraImages = $imgStmt->fetchAll();
+} catch (Throwable $e) { /* tablo yoksa boş */ }
 
 // Dokümanlar
-$docStmt = $pdo->prepare('SELECT * FROM product_documents WHERE product_id = :pid AND is_active = 1 ORDER BY sort_order ASC, id ASC');
-$docStmt->execute([':pid' => $productId]);
-$documents = $docStmt->fetchAll();
+$documents = [];
+try {
+    $docStmt = $pdo->prepare('SELECT * FROM product_documents WHERE product_id = :pid AND is_active = 1 ORDER BY sort_order ASC, id ASC');
+    $docStmt->execute([':pid' => $productId]);
+    $documents = $docStmt->fetchAll();
+} catch (Throwable $e) { /* tablo yoksa boş */ }
 
 // Benzer ürünler (aynı kategoriden, kendisi hariç)
-$relatedStmt = $pdo->prepare('SELECT id, name, main_image, code FROM products WHERE category_id = :cid AND id <> :id AND is_active = 1 ORDER BY sort_order ASC, id ASC LIMIT 3');
-$relatedStmt->execute([':cid' => $product['category_id'], ':id' => $productId]);
-$relatedProducts = $relatedStmt->fetchAll();
+$relatedProducts = [];
+try {
+    $relatedStmt = $pdo->prepare('SELECT id, name, main_image, code FROM products WHERE category_id = :cid AND id <> :id AND is_active = 1 ORDER BY sort_order ASC, id ASC LIMIT 3');
+    $relatedStmt->execute([':cid' => $product['category_id'], ':id' => $productId]);
+    $relatedProducts = $relatedStmt->fetchAll();
+} catch (Throwable $e) { /* tablo yoksa boş */ }
 ?>
 
 <section class="py-5">

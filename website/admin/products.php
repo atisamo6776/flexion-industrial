@@ -305,37 +305,68 @@ $editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 
 $categories = $pdo->query('SELECT id, name FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC')->fetchAll();
 
+$editProduct = null;
+$specTables  = [];
+$regulations = [];
+$extraImages = [];
+$productDocs = [];
+
 if ($editId) {
-    $stmt = $pdo->prepare('SELECT * FROM products WHERE id = ?');
-    $stmt->execute([$editId]);
-    $editProduct = $stmt->fetch() ?: null;
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM products WHERE id = ?');
+        $stmt->execute([$editId]);
+        $editProduct = $stmt->fetch() ?: null;
+    } catch (Throwable $e) {
+        $error = 'Ürün verisi alınamadı: ' . $e->getMessage();
+    }
 
-    $specTables = [];
     if ($editProduct) {
-        $stmt2 = $pdo->prepare('SELECT * FROM product_spec_tables WHERE product_id = ? ORDER BY sort_order ASC');
-        $stmt2->execute([$editId]);
-        $specTables = $stmt2->fetchAll();
-        foreach ($specTables as &$t) {
-            $stmt3 = $pdo->prepare('SELECT * FROM product_specs WHERE table_id = ? ORDER BY sort_order ASC');
-            $stmt3->execute([$t['id']]);
-            $t['rows'] = $stmt3->fetchAll();
+        try {
+            $stmt2 = $pdo->prepare('SELECT * FROM product_spec_tables WHERE product_id = ? ORDER BY sort_order ASC');
+            $stmt2->execute([$editId]);
+            $specTables = $stmt2->fetchAll();
+            foreach ($specTables as &$t) {
+                $stmt3 = $pdo->prepare('SELECT * FROM product_specs WHERE table_id = ? ORDER BY sort_order ASC');
+                $stmt3->execute([$t['id']]);
+                $t['rows'] = $stmt3->fetchAll();
+            }
+            unset($t);
+        } catch (Throwable $e) {
+            $specTables = [];
         }
-        unset($t);
-        $stmt4 = $pdo->prepare('SELECT * FROM product_regulations WHERE product_id = ? ORDER BY sort_order ASC');
-        $stmt4->execute([$editId]);
-        $regulations = $stmt4->fetchAll();
 
-        $stmt5 = $pdo->prepare('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order ASC');
-        $stmt5->execute([$editId]);
-        $extraImages = $stmt5->fetchAll();
+        try {
+            $stmt4 = $pdo->prepare('SELECT * FROM product_regulations WHERE product_id = ? ORDER BY sort_order ASC');
+            $stmt4->execute([$editId]);
+            $regulations = $stmt4->fetchAll();
+        } catch (Throwable $e) {
+            $regulations = [];
+        }
 
-        $stmt6 = $pdo->prepare('SELECT * FROM product_documents WHERE product_id = ? ORDER BY sort_order ASC');
-        $stmt6->execute([$editId]);
-        $productDocs = $stmt6->fetchAll();
+        try {
+            $stmt5 = $pdo->prepare('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order ASC');
+            $stmt5->execute([$editId]);
+            $extraImages = $stmt5->fetchAll();
+        } catch (Throwable $e) {
+            $extraImages = [];
+        }
+
+        try {
+            $stmt6 = $pdo->prepare('SELECT * FROM product_documents WHERE product_id = ? ORDER BY sort_order ASC');
+            $stmt6->execute([$editId]);
+            $productDocs = $stmt6->fetchAll();
+        } catch (Throwable $e) {
+            $productDocs = [];
+        }
     }
 }
 
-$products = $pdo->query('SELECT p.*, c.name AS cat_name FROM products p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.sort_order ASC, p.name ASC')->fetchAll();
+try {
+    $products = $pdo->query('SELECT p.*, c.name AS cat_name FROM products p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.sort_order ASC, p.name ASC')->fetchAll();
+} catch (Throwable $e) {
+    $products = [];
+    $error = 'Ürün listesi alınamadı. Lütfen <a href="migrate.php">migrasyonu</a> çalıştırın. Hata: ' . htmlspecialchars($e->getMessage());
+}
 
 $token = csrf_token();
 

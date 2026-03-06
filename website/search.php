@@ -11,13 +11,21 @@ $resultsCats     = [];
 if ($q !== '') {
     $like = '%' . $q . '%';
 
-    $stmt = $pdo->prepare('SELECT * FROM products WHERE is_active = 1 AND (name LIKE :q1 OR code LIKE :q2 OR short_description LIKE :q3) ORDER BY name ASC LIMIT 50');
-    $stmt->execute([':q1' => $like, ':q2' => $like, ':q3' => $like]);
-    $resultsProducts = $stmt->fetchAll();
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM products WHERE is_active = 1 AND (name LIKE :q1 OR code LIKE :q2 OR short_description LIKE :q3) ORDER BY name ASC LIMIT 50');
+        $stmt->execute([':q1' => $like, ':q2' => $like, ':q3' => $like]);
+        $resultsProducts = $stmt->fetchAll();
+    } catch (Throwable $e) {
+        $resultsProducts = [];
+    }
 
-    $stmt2 = $pdo->prepare('SELECT * FROM categories WHERE is_active = 1 AND (name LIKE :q1 OR short_description LIKE :q2) ORDER BY name ASC LIMIT 20');
-    $stmt2->execute([':q1' => $like, ':q2' => $like]);
-    $resultsCats = $stmt2->fetchAll();
+    try {
+        $stmt2 = $pdo->prepare('SELECT * FROM categories WHERE is_active = 1 AND (name LIKE :q1 OR short_description LIKE :q2) ORDER BY name ASC LIMIT 20');
+        $stmt2->execute([':q1' => $like, ':q2' => $like]);
+        $resultsCats = $stmt2->fetchAll();
+    } catch (Throwable $e) {
+        $resultsCats = [];
+    }
 }
 ?>
 

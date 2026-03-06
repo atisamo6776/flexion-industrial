@@ -6,9 +6,13 @@ $pdo  = db();
 $slug = $_GET['slug'] ?? null;
 
 if ($slug) {
-    $stmt = $pdo->prepare('SELECT * FROM news WHERE slug = :slug AND is_active = 1 LIMIT 1');
-    $stmt->execute([':slug' => $slug]);
-    $article = $stmt->fetch();
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM news WHERE slug = :slug AND is_active = 1 LIMIT 1');
+        $stmt->execute([':slug' => $slug]);
+        $article = $stmt->fetch();
+    } catch (Throwable $e) {
+        $article = null;
+    }
 
     if (!$article) {
         http_response_code(404);
@@ -56,9 +60,13 @@ if ($slug) {
                     <h2 class="h6 mb-3">Diğer Haberler</h2>
                     <ul class="list-unstyled small">
                         <?php
-                        $side = $pdo->prepare('SELECT slug, title FROM news WHERE is_active = 1 AND id <> :id ORDER BY IFNULL(published_at, id) DESC LIMIT 6');
-                        $side->execute([':id' => $article['id']]);
-                        foreach ($side as $n): ?>
+                        $sideNews = [];
+                        try {
+                            $side = $pdo->prepare('SELECT slug, title FROM news WHERE is_active = 1 AND id <> :id ORDER BY IFNULL(published_at, id) DESC LIMIT 6');
+                            $side->execute([':id' => $article['id']]);
+                            $sideNews = $side->fetchAll();
+                        } catch (Throwable $e) {}
+                        foreach ($sideNews as $n): ?>
                             <li class="mb-2">
                                 <a href="news.php?slug=<?= e($n['slug']) ?>" class="text-decoration-none">
                                     <?= e($n['title']) ?>
@@ -76,8 +84,11 @@ if ($slug) {
 }
 
 // Liste modu
-$stmt = $pdo->query('SELECT * FROM news WHERE is_active = 1 ORDER BY IFNULL(published_at, id) DESC');
-$items = $stmt->fetchAll();
+$items = [];
+try {
+    $stmt  = $pdo->query('SELECT * FROM news WHERE is_active = 1 ORDER BY IFNULL(published_at, id) DESC');
+    $items = $stmt->fetchAll();
+} catch (Throwable $e) { /* tablo yoksa boş */ }
 ?>
 
 <?php
