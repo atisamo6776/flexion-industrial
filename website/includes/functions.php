@@ -179,7 +179,7 @@ function get_home_sections(): array
 function get_latest_news(int $limit = 3): array
 {
     $pdo = db();
-    $stmt = $pdo->prepare('SELECT * FROM news WHERE is_active = 1 ORDER BY IFNULL(published_at, created_at) DESC LIMIT :limit');
+    $stmt = $pdo->prepare('SELECT * FROM news WHERE is_active = 1 ORDER BY COALESCE(published_at, NOW()) DESC, id DESC LIMIT :limit');
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->execute();
     return $stmt->fetchAll();
