@@ -168,7 +168,9 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 ('social_linkedin',  ''),
 ('social_youtube',   ''),
 ('footer_text',      '© 2025 Flexion Industrial A.Ş. Tüm hakları saklıdır.'),
-('newsletter_text',  'Yeni ürün ve projelerden haberdar olmak için bültenimize abone olun.');
+('newsletter_text',  'Yeni ürün ve projelerden haberdar olmak için bültenimize abone olun.'),
+('news_banner_image',''),
+('news_banner_title','Haberler & Insights');
 
 -- Ana menü
 INSERT INTO `menu_items` (`title`, `url`, `sort_order`, `is_active`) VALUES

@@ -21,8 +21,10 @@ function settings_get_all(PDO $pdo): array
 
 function settings_save(PDO $pdo, string $key, ?string $value): void
 {
-    $stmt = $pdo->prepare('INSERT INTO settings (setting_key, setting_value) VALUES (:k, :v)
-        ON DUPLICATE KEY UPDATE setting_value = :v');
+    $stmt = $pdo->prepare(
+        'INSERT INTO settings (setting_key, setting_value) VALUES (:k, :v)
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
+    );
     $stmt->execute([':k' => $key, ':v' => $value]);
 }
 
@@ -53,6 +55,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Favicon yüklenemedi. ICO, PNG veya SVG maks 512 KB.';
             }
         }
+
+        // Haberler banner görseli
+        if (!empty($_FILES['news_banner_image']['name'])) {
+            $uploadDir = __DIR__ . '/../assets/uploads/';
+            $fn        = upload_file(
+                $_FILES['news_banner_image'],
+                $uploadDir,
+                ['image/jpeg', 'image/png', 'image/webp'],
+                5 * 1024 * 1024
+            );
+            if ($fn) {
+                settings_save($pdo, 'news_banner_image', 'assets/uploads/' . $fn);
+            } else {
+                $error = 'Haberler banner görseli yüklenemedi. JPG/PNG/WEBP maks 5 MB.';
+            }
+        }
+
+        settings_save($pdo, 'news_banner_title', trim($_POST['news_banner_title'] ?? ''));
 
         if (!$error) {
             $success = 'Genel ayarlar kaydedildi.';
@@ -111,6 +131,27 @@ include __DIR__ . '/partials_header.php';
                         <label class="form-label">Google Analytics / GTM Kodu</label>
                         <textarea name="ga_code" class="form-control font-monospace" rows="4" placeholder="<script>...</script>"><?= e($settings['ga_code'] ?? '') ?></textarea>
                         <div class="form-text">Buraya yapıştırdığın kod, her sayfanın &lt;head&gt; bölümüne eklenir.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white"><strong>Haberler Sayfası Banner</strong></div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Banner Görseli</label>
+                        <?php if (!empty($settings['news_banner_image'])): ?>
+                            <div class="mb-2">
+                                <img src="<?= e('../' . $settings['news_banner_image']) ?>" alt="" class="img-fluid rounded border">
+                            </div>
+                        <?php endif; ?>
+                        <input type="file" name="news_banner_image" class="form-control" accept="image/jpeg,image/png,image/webp">
+                        <div class="form-text">Haberler listesi üstünde görünecek geniş banner görseli.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Banner Başlığı</label>
+                        <input type="text" name="news_banner_title" class="form-control"
+                               value="<?= e($settings['news_banner_title'] ?? 'Haberler & Insights') ?>">
                     </div>
                 </div>
             </div>

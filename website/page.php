@@ -30,6 +30,19 @@ if (!$page) {
 }
 ?>
 
+<?php if (!empty($page['banner_image'])): ?>
+    <section class="fx-page-banner d-flex align-items-center mb-4"
+             style="background-image:url('<?= e($page['banner_image']) ?>');">
+        <div class="container">
+            <?php if (!empty($page['banner_title'])): ?>
+                <h1 class="h3 text-white mb-0"><?= e($page['banner_title']) ?></h1>
+            <?php else: ?>
+                <h1 class="h3 text-white mb-0"><?= e($page['title']) ?></h1>
+            <?php endif; ?>
+        </div>
+    </section>
+<?php endif; ?>
+
 <section class="py-5">
     <div class="container">
         <div class="row justify-content-center">

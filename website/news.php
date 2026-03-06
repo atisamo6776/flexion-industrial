@@ -23,6 +23,18 @@ if ($slug) {
         exit;
     }
     ?>
+    <?php
+    $bannerImg   = get_setting('news_banner_image', '');
+    $bannerTitle = get_setting('news_banner_title', 'Haberler & Insights');
+    if ($bannerImg): ?>
+        <section class="fx-page-banner d-flex align-items-center mb-4"
+                 style="background-image:url('<?= e($bannerImg) ?>');">
+            <div class="container">
+                <h1 class="h3 text-white mb-0"><?= e($bannerTitle) ?></h1>
+            </div>
+        </section>
+    <?php endif; ?>
+
     <section class="py-5">
         <div class="container">
             <div class="row">
@@ -67,6 +79,18 @@ if ($slug) {
 $stmt = $pdo->query('SELECT * FROM news WHERE is_active = 1 ORDER BY IFNULL(published_at, id) DESC');
 $items = $stmt->fetchAll();
 ?>
+
+<?php
+$bannerImg   = get_setting('news_banner_image', '');
+$bannerTitle = get_setting('news_banner_title', 'Haberler & Insights');
+if ($bannerImg): ?>
+    <section class="fx-page-banner d-flex align-items-center mb-4"
+             style="background-image:url('<?= e($bannerImg) ?>');">
+        <div class="container">
+            <h1 class="h3 text-white mb-0"><?= e($bannerTitle) ?></h1>
+        </div>
+    </section>
+<?php endif; ?>
 
 <section class="py-5">
     <div class="container">

@@ -62,6 +62,12 @@ $menu        = get_main_menu();
                         <?php endif; ?>
                     <?php endforeach; ?>
                 </ul>
+                <form action="search.php" method="get" class="d-flex ms-lg-3 mt-2 mt-lg-0">
+                    <input type="search" name="q" class="form-control form-control-sm" placeholder="Ürün ara...">
+                    <button class="btn btn-sm btn-outline-secondary ms-1" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
             </div>
         </div>
     </nav>

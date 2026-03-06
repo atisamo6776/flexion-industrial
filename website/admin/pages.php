@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Güvenlik doğrulaması başarısız.';
     } else {
-        if (isset($_POST['save_page'])) {
+            if (isset($_POST['save_page'])) {
             $id         = isset($_POST['id']) ? (int) $_POST['id'] : 0;
             $slug       = trim($_POST['slug'] ?? '');
             $title      = trim($_POST['title'] ?? '');
@@ -35,29 +35,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($checkStmt->fetch()) {
                     $error = "Bu slug ($slug) zaten kullanımda. Farklı bir slug seçin.";
                 } else {
-                    if ($id > 0) {
-                        $stmt = $pdo->prepare('UPDATE pages SET slug = :slug, title = :title, content = :content, meta_description = :meta, is_active = :active WHERE id = :id');
-                        $stmt->execute([
-                            ':slug'    => $slug,
-                            ':title'   => $title,
-                            ':content' => $content,
-                            ':meta'    => $metaDesc,
-                            ':active'  => $isActive,
-                            ':id'      => $id,
-                        ]);
-                        $success = 'Sayfa güncellendi.';
-                    } else {
-                        $sort = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM pages')->fetchColumn();
-                        $stmt = $pdo->prepare('INSERT INTO pages (slug, title, content, meta_description, is_active, sort_order) VALUES (:slug, :title, :content, :meta, :active, :sort)');
-                        $stmt->execute([
-                            ':slug'    => $slug,
-                            ':title'   => $title,
-                            ':content' => $content,
-                            ':meta'    => $metaDesc,
-                            ':active'  => $isActive,
-                            ':sort'    => $sort,
-                        ]);
-                        $success = 'Sayfa eklendi.';
+                    $bannerImage = null;
+                    if (!empty($_FILES['banner_image']['name'])) {
+                        $uploadDir = __DIR__ . '/../assets/uploads/';
+                        $fn        = upload_file(
+                            $_FILES['banner_image'],
+                            $uploadDir,
+                            ['image/jpeg', 'image/png', 'image/webp'],
+                            5 * 1024 * 1024
+                        );
+                        if ($fn) {
+                            $bannerImage = 'assets/uploads/' . $fn;
+                        } else {
+                            $error = 'Banner görseli yüklenemedi. JPG/PNG/WEBP en fazla 5 MB olmalı.';
+                        }
+                    }
+
+                    if (!$error) {
+                        if ($id > 0) {
+                            if ($bannerImage !== null) {
+                                $stmt = $pdo->prepare('UPDATE pages SET slug = :slug, title = :title, content = :content, meta_description = :meta, banner_image = :bimg, banner_title = :btitle, is_active = :active WHERE id = :id');
+                            } else {
+                                $stmt = $pdo->prepare('UPDATE pages SET slug = :slug, title = :title, content = :content, meta_description = :meta, banner_title = :btitle, is_active = :active WHERE id = :id');
+                            }
+                            $params = [
+                                ':slug'   => $slug,
+                                ':title'  => $title,
+                                ':content'=> $content,
+                                ':meta'   => $metaDesc,
+                                ':btitle' => trim($_POST['banner_title'] ?? ''),
+                                ':active' => $isActive,
+                                ':id'     => $id,
+                            ];
+                            if ($bannerImage !== null) {
+                                $params[':bimg'] = $bannerImage;
+                            }
+                            $stmt->execute($params);
+                            $success = 'Sayfa güncellendi.';
+                        } else {
+                            $sort   = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM pages')->fetchColumn();
+                            $stmt   = $pdo->prepare('INSERT INTO pages (slug, title, content, meta_description, banner_image, banner_title, is_active, sort_order) VALUES (:slug, :title, :content, :meta, :bimg, :btitle, :active, :sort)');
+                            $stmt->execute([
+                                ':slug'   => $slug,
+                                ':title'  => $title,
+                                ':content'=> $content,
+                                ':meta'   => $metaDesc,
+                                ':bimg'   => $bannerImage,
+                                ':btitle' => trim($_POST['banner_title'] ?? ''),
+                                ':active' => $isActive,
+                                ':sort'   => $sort,
+                            ]);
+                            $success = 'Sayfa eklendi.';
+                        }
                     }
                 }
             }
@@ -187,6 +216,24 @@ include __DIR__ . '/partials_header.php';
                         <label class="form-label">İçerik</label>
                         <textarea name="content" id="page_content" class="form-control" rows="10"><?= htmlspecialchars($editPage['content'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
                         <div class="form-text">HTML içerik yazabilirsiniz.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Banner Görseli</label>
+                        <?php if (!empty($editPage['banner_image'])): ?>
+                            <div class="mb-2">
+                                <img src="<?= e('../' . $editPage['banner_image']) ?>" alt="" class="img-fluid rounded border">
+                            </div>
+                        <?php endif; ?>
+                        <input type="file" name="banner_image" class="form-control" accept="image/jpeg,image/png,image/webp">
+                        <div class="form-text">Üstte görünecek geniş banner. JPG/PNG/WEBP, maks 5 MB.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Banner Başlığı</label>
+                        <input type="text" name="banner_title" class="form-control"
+                               value="<?= e($editPage['banner_title'] ?? '') ?>">
+                        <div class="form-text">Banner üzerinde büyük başlık olarak gösterilir (boş bırakılabilir).</div>
                     </div>
 
                     <div class="mb-3">

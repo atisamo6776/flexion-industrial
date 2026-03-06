@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 require_admin_login();
 
@@ -70,6 +71,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Liste
 $items = $pdo->query('SELECT * FROM menu_items ORDER BY sort_order ASC, id ASC')->fetchAll();
+
+// Hızlı linkler için aktif kurumsal sayfalar
+$pageLinks = [];
+try {
+    $stmtPages = $pdo->query('SELECT slug, title FROM pages WHERE is_active = 1 ORDER BY sort_order ASC, id ASC');
+    foreach ($stmtPages as $p) {
+        $pageLinks['page.php?slug=' . $p['slug']] = $p['title'];
+    }
+} catch (Throwable $e) {
+    $pageLinks = [];
+}
 
 $token = csrf_token();
 
@@ -165,6 +177,29 @@ include __DIR__ . '/partials_header.php';
                         <input type="text" name="url" class="form-control"
                                value="<?= e($editItem['url'] ?? '') ?>" required>
                         <div class="form-text">Örn: index.php, sectors.php, category.php?id=1</div>
+                        <div class="mt-2">
+                            <div class="small text-muted mb-1">Mevcut sayfalardan seç:</div>
+                            <div class="d-flex flex-wrap gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        onclick="document.querySelector('input[name=url]').value='index.php'">
+                                    Ana Sayfa
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        onclick="document.querySelector('input[name=url]').value='sectors.php'">
+                                    Sektörler
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        onclick="document.querySelector('input[name=url]').value='news.php'">
+                                    Haberler
+                                </button>
+                                <?php foreach ($pageLinks as $link => $title): ?>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                            onclick="document.querySelector('input[name=url]').value='<?= e($link) ?>'">
+                                        <?= e($title) ?>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Üst Menü (opsiyonel)</label>
