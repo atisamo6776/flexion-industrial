@@ -65,8 +65,73 @@ Admin paneline girdikten sonra:
 3. "Menü" → Navigasyon linklerini sitene göre güncelle
 4. "Kategoriler" → Kablo kategorilerini ekle / düzenle / fotoğraf yükle
 5. "Ürünler" → Ürünleri ekle; teknik özellik tabloları ve regülasyonları gir
-6. "Ana Sayfa Blokları" → Sürükle-bırak ile bölümleri sırala / düzenle
+6. "Ana Sayfa Blokları" → Görsel yükle (JPG/PNG/WEBP) veya URL gir;
+   sürükle-bırak ile sırala / düzenle
 7. "Haberler" → İlk haber ve insights içeriklerini gir
+8. "Kurumsal Sayfalar" → Hakkımızda, İletişim ve ek sayfalar yönetimi
+
+YENİ ÖZELLİKLER (v2)
+----------------------
+Ana Sayfa Görseli Yükleme:
+  "Ana Sayfa Blokları" formunda artık "Görsel Yükle" seçeneği var.
+  Dosyalar assets/uploads/home/ klasörüne kaydedilir.
+
+Kurumsal Sayfalar (pages tablosu):
+  Admin → Kurumsal Sayfalar bölümünden dinamik sayfalar oluşturabilirsin.
+  Her sayfa bir slug ile erişilir:
+    http://siteniz.com/page.php?slug=hakkimizda
+    http://siteniz.com/page.php?slug=iletisim
+  İletişim sayfası; adres, telefon, e-posta ve bir iletişim formu içerir.
+  Bu bilgiler "Header / Footer" ayarlarından yönetilir.
+
+Ürün Teknik Tablo Silme:
+  Ürün düzenleme sayfasında her teknik özellik tablosunun başlığı yanında
+  artık "Tabloyu Sil" butonu bulunur. Bu buton tabloyu ve tüm satırlarını
+  tek seferde siler.
+
+Ürün Ek Görseller Galerisi:
+  Ürün detay sayfasında ana görsel altında yüklenen ek görseller
+  küçük thumbnail olarak listelenir. Bir thumbnaile tıklanınca ana görsel
+  değişir.
+
+Ürün Dokümanları (product_documents tablosu):
+  Admin → Ürünler → Ürün Düzenle → "Dokümanlar / PDF" bölümünden
+  ürüne PDF, Word veya Excel dosyası eklenebilir (maks 10 MB).
+  Ürün detay sayfasında "Dokümanlar" başlığı altında indir linki çıkar.
+  Dosyalar assets/uploads/documents/ klasörüne kaydedilir.
+
+VERİTABANI GÜNCELLEMESİ (Yeni Kurulum için)
+---------------------------------------------
+database.sql dosyasını yeniden içe aktar. Yeni tablolar:
+  - pages            : Kurumsal sayfalar
+  - product_documents: Ürüne bağlı PDF/dokümanlar
+
+Eğer mevcut veritabanın varsa (tablolar zaten oluşturulmuş) sadece şu
+SQL sorgularını phpMyAdmin → SQL sekmesinden çalıştır:
+
+  CREATE TABLE IF NOT EXISTS `pages` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `slug` VARCHAR(200) NOT NULL UNIQUE,
+    `title` VARCHAR(255) NOT NULL,
+    `content` LONGTEXT NULL,
+    `meta_description` VARCHAR(300) NULL,
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+    `sort_order` INT NOT NULL DEFAULT 0,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+  CREATE TABLE IF NOT EXISTS `product_documents` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `product_id` INT UNSIGNED NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `file_path` VARCHAR(500) NOT NULL,
+    `sort_order` INT NOT NULL DEFAULT 0,
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_product_documents_product` (`product_id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 KLASÖR YAPISI
 -------------
@@ -74,18 +139,22 @@ website/
 ├── admin/                ← Admin paneli (login korumalı)
 │   ├── login.php
 │   ├── index.php         ← Dashboard
-│   ├── homepage.php      ← Ana sayfa blok yönetimi
+│   ├── homepage.php      ← Ana sayfa blok yönetimi (görsel upload destekli)
 │   ├── menu.php          ← Menü yönetimi
 │   ├── header-footer.php ← Header/Footer ayarları
 │   ├── categories.php    ← Kategori CRUD
-│   ├── products.php      ← Ürün CRUD + specs + regülasyonlar
+│   ├── products.php      ← Ürün CRUD + specs + regülasyonlar + dokümanlar
+│   ├── pages.php         ← Kurumsal sayfalar yönetimi (YENİ)
 │   ├── news.php          ← Haberler yönetimi
 │   ├── settings.php      ← Genel site ayarları
 │   └── profile.php       ← Şifre değiştirme
 ├── assets/
 │   ├── css/main.css
 │   ├── js/
-│   └── uploads/          ← Yüklenen görseller (yazma izni gerekli)
+│   └── uploads/
+│       ├── products/     ← Ürün görselleri
+│       ├── home/         ← Ana sayfa blok görselleri (YENİ)
+│       └── documents/    ← Ürün PDF/dokümanları (YENİ)
 ├── includes/
 │   ├── config.php        ← Veritabanı & uygulama ayarları (buradan başla)
 │   ├── db.php
@@ -97,7 +166,8 @@ website/
 ├── index.php             ← Ana sayfa
 ├── sectors.php           ← Kategori / Sektör listesi
 ├── category.php          ← Ürün listesi (kategori bazlı)
-├── product.php           ← Ürün detay
+├── product.php           ← Ürün detay (galeri + dokümanlar)
+├── page.php              ← Kurumsal sayfa (YENİ)
 └── news.php              ← Haberler & Insights
 
 GÜVENLİK NOTLARI

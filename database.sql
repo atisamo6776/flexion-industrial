@@ -1,11 +1,7 @@
 -- Flexion Website - MySQL Schema
 -- Charset: utf8mb4
 
-CREATE DATABASE IF NOT EXISTS `flexion_website`
-  DEFAULT CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE `flexion_website`;
+USE `flexionindustria_main`;
 
 -- Admin users
 CREATE TABLE `users` (
@@ -188,7 +184,7 @@ INSERT INTO `categories` (`name`, `slug`, `short_description`, `sort_order`, `is
 ('Kontrol Kabloları',     'kontrol-kabolari',    'Endüstriyel otomasyon ve kontrol sistemleri için kablolar.', 2, 1),
 ('Data & İletişim',       'data-iletisim',       'Yapısal kablolama ve iletişim altyapısı çözümleri.',        3, 1),
 ('Yangına Dayanıklı',     'yangina-dayanikli',   'BS 6387 ve IEC 60331 standartlarına uygun yangın kabloları.',4, 1),
-('Denizcilik & Offshore', 'denizcilik-offshore', 'DNV, Lloyd\'s onaylı marine ve offshore kablo serileri.',   5, 1),
+('Denizcilik & Offshore', 'denizcilik-offshore', 'DNV, Lloyd''s onaylı marine ve offshore kablo serileri.',   5, 1),
 ('Özel Uygulama',         'ozel-uygulama',       'Müşteri talebine özel tasarım ve üretim.',                  6, 1);
 
 -- Örnek ürünler
@@ -196,8 +192,8 @@ INSERT INTO `products` (`category_id`, `name`, `slug`, `code`, `short_descriptio
 (1, 'FLX-HV 35 kV XLPE',   'flx-hv-35kv-xlpe',   'FLX-HV-35',  'Orta gerilim dağıtım şebekeleri için XLPE izoleli enerji kablosu.',          1, 1),
 (1, 'FLX-LV 1 kV NYY',     'flx-lv-1kv-nyy',     'FLX-LV-1',   '0,6/1 kV PVC izoleli, PVC kılıflı güç kablosu. Bina ve altyapı uygulamaları.', 2, 1),
 (2, 'FLX-CTRL 0,6/1 kV',   'flx-ctrl-06-1kv',    'FLX-CTRL',   'Çok damarlı kontrol kablosu; esnek ve rijit seçenekli.',                       1, 1),
-(3, 'FLX-CAT6A U/FTP',     'flx-cat6a-uftp',     'FLX-CAT6A',  '10 Gbps'e kadar hız; bant genişliği 500 MHz.',                               1, 1),
-(4, 'FLX-FR 3 Saat',       'flx-fr-3saat',        'FLX-FR-3H',  'BS 6387 CWZ sertifikalı; 950 °C\'de 3 saat yangın dayanımı.',                 1, 1),
+(3, 'FLX-CAT6A U/FTP',     'flx-cat6a-uftp',     'FLX-CAT6A',  '10 Gbps''e kadar hız; bant genişliği 500 MHz.',                               1, 1),
+(4, 'FLX-FR 3 Saat',       'flx-fr-3saat',        'FLX-FR-3H',  'BS 6387 CWZ sertifikalı; 950 °C''de 3 saat yangın dayanımı.',                 1, 1),
 (5, 'FLX-MRN NEK606',      'flx-mrn-nek606',      'FLX-MRN',    'NEK 606 standardına uygun offshore güç kablosu.',                             1, 1);
 
 -- Örnek ana sayfa bölümleri
@@ -226,6 +222,42 @@ INSERT INTO `home_sections` (`section_type`, `title`, `content_json`, `sort_orde
   '{"subtitle":"Flexion ürünleri ve sektördeki gelişmeler."}',
   4, 1
 );
+
+-- Kurumsal sayfalar
+CREATE TABLE `pages` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(200) NOT NULL UNIQUE,
+  `title` VARCHAR(255) NOT NULL,
+  `content` LONGTEXT NULL,
+  `meta_description` VARCHAR(300) NULL,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `pages` (`slug`, `title`, `content`, `meta_description`, `sort_order`, `is_active`) VALUES
+('hakkimizda', 'Hakkımızda',
+ '<h2>Flexion Industrial Hakkında</h2><p>Flexion Industrial, 2010 yılından bu yana enerji, altyapı ve endüstriyel sektörlere yönelik yüksek kaliteli kablo ve bağlantı çözümleri sunmaktadır. Tüm ürünlerimiz uluslararası standartlara (IEC, BS, DIN) uygun üretilmektedir.</p><p>Müşterilerimize en yüksek kalitede ürün ve hizmet sunmayı hedefleyen firmamız, sürekli gelişen teknolojileri takip ederek sektörde öncü konumunu korumaktadır.</p>',
+ 'Flexion Industrial hakkında - Misyon, vizyon ve kurumsal kimlik.',
+ 1, 1),
+('iletisim', 'İletişim',
+ '<h2>Bize Ulaşın</h2><p>Ürünlerimiz veya çözümlerimiz hakkında bilgi almak için aşağıdaki iletişim kanallarından bize ulaşabilirsiniz.</p>',
+ 'Flexion Industrial iletişim bilgileri ve bize ulaşın.',
+ 2, 1);
+
+-- Ürün dokümanları
+CREATE TABLE `product_documents` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `product_id` INT UNSIGNED NOT NULL,
+  `title` VARCHAR(255) NOT NULL,
+  `file_path` VARCHAR(500) NOT NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_product_documents_product` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Örnek haber
 INSERT INTO `news` (`title`, `slug`, `summary`, `published_at`, `is_active`) VALUES

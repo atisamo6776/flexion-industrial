@@ -36,6 +36,10 @@ function upload_file(
         'image/gif'       => 'gif',
         'image/svg+xml'   => 'svg',
         'application/pdf' => 'pdf',
+        'application/msword'                                                          => 'doc',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'    => 'docx',
+        'application/vnd.ms-excel'                                                   => 'xls',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'          => 'xlsx',
     ];
     $ext = $mimeExtMap[$mime] ?? 'bin';
 

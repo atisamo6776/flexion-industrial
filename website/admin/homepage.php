@@ -1,14 +1,16 @@
 <?php
 
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/upload_helper.php';
 
 require_admin_login();
 
-$pdo = db();
-$error = null;
-$success = null;
+$pdo        = db();
+$error      = null;
+$success    = null;
+$uploadDir  = __DIR__ . '/../assets/uploads/home/';
+$uploadBase = 'assets/uploads/home/';
 
-// Yeni / güncelleme işlemi
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? null;
     if (!verify_csrf_token($token)) {
@@ -20,55 +22,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $title       = trim($_POST['title'] ?? '');
             $isActive    = isset($_POST['is_active']) ? 1 : 0;
 
-            $content = [
-                'eyebrow'     => $_POST['eyebrow'] ?? null,
-                'subtitle'    => $_POST['subtitle'] ?? null,
-                'button_text' => $_POST['button_text'] ?? null,
-                'button_url'  => $_POST['button_url'] ?? null,
-                'image'       => $_POST['image'] ?? null,
-                'text'        => $_POST['text'] ?? null,
-            ];
+            // Mevcut içeriği başlangıç olarak al (güncelleme yapılıyorsa eski image korunur)
+            $existingImage = trim($_POST['existing_image'] ?? '');
 
-            $json = json_encode($content, JSON_UNESCAPED_UNICODE);
+            // Görsel upload kontrolü
+            $uploadedImage = null;
+            if (!empty($_FILES['image_file']['name'])) {
+                $fn = upload_file(
+                    $_FILES['image_file'],
+                    $uploadDir,
+                    ['image/jpeg', 'image/png', 'image/webp'],
+                    5 * 1024 * 1024
+                );
+                if ($fn) {
+                    $uploadedImage = $uploadBase . $fn;
+                } else {
+                    $error = 'Görsel yüklenemedi. JPG/PNG/WEBP maks 5 MB olmalıdır.';
+                }
+            }
 
-            if ($id > 0) {
-                $stmt = $pdo->prepare('UPDATE home_sections SET section_type = :type, title = :title, content_json = :content, is_active = :active WHERE id = :id');
-                $stmt->execute([
-                    ':type'    => $sectionType,
-                    ':title'   => $title,
-                    ':content' => $json,
-                    ':active'  => $isActive,
-                    ':id'      => $id,
-                ]);
-                $success = 'Blok güncellendi.';
-            } else {
-                $sort   = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM home_sections')->fetchColumn();
-                $stmt = $pdo->prepare('INSERT INTO home_sections (section_type, title, content_json, sort_order, is_active) VALUES (:type, :title, :content, :sort, :active)');
-                $stmt->execute([
-                    ':type'    => $sectionType,
-                    ':title'   => $title,
-                    ':content' => $json,
-                    ':sort'    => $sort,
-                    ':active'  => $isActive,
-                ]);
-                $success = 'Yeni blok eklendi.';
+            if (!$error) {
+                $content = [
+                    'eyebrow'     => trim($_POST['eyebrow'] ?? '') ?: null,
+                    'subtitle'    => trim($_POST['subtitle'] ?? '') ?: null,
+                    'button_text' => trim($_POST['button_text'] ?? '') ?: null,
+                    'button_url'  => trim($_POST['button_url'] ?? '') ?: null,
+                    'text'        => trim($_POST['text'] ?? '') ?: null,
+                    'image_url'   => trim($_POST['image_url'] ?? '') ?: null,
+                    // Önce upload dosyası, yoksa eski dosya
+                    'image'       => $uploadedImage ?? ($existingImage ?: null),
+                ];
+
+                $json = json_encode($content, JSON_UNESCAPED_UNICODE);
+
+                if ($id > 0) {
+                    $stmt = $pdo->prepare('UPDATE home_sections SET section_type = :type, title = :title, content_json = :content, is_active = :active WHERE id = :id');
+                    $stmt->execute([
+                        ':type'    => $sectionType,
+                        ':title'   => $title,
+                        ':content' => $json,
+                        ':active'  => $isActive,
+                        ':id'      => $id,
+                    ]);
+                    $success = 'Blok güncellendi.';
+                } else {
+                    $sort = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM home_sections')->fetchColumn();
+                    $stmt = $pdo->prepare('INSERT INTO home_sections (section_type, title, content_json, sort_order, is_active) VALUES (:type, :title, :content, :sort, :active)');
+                    $stmt->execute([
+                        ':type'    => $sectionType,
+                        ':title'   => $title,
+                        ':content' => $json,
+                        ':sort'    => $sort,
+                        ':active'  => $isActive,
+                    ]);
+                    $success = 'Yeni blok eklendi.';
+                }
             }
         } elseif (isset($_POST['delete_section'])) {
             $id = (int) ($_POST['id'] ?? 0);
             if ($id > 0) {
-                $stmt = $pdo->prepare('DELETE FROM home_sections WHERE id = :id');
-                $stmt->execute([':id' => $id]);
+                $pdo->prepare('DELETE FROM home_sections WHERE id = :id')->execute([':id' => $id]);
                 $success = 'Blok silindi.';
             }
         } elseif (isset($_POST['save_order'])) {
-            $ids = $_POST['order'] ?? [];
-            $i   = 1;
+            $ids  = $_POST['order'] ?? [];
+            $i    = 1;
             $stmt = $pdo->prepare('UPDATE home_sections SET sort_order = :sort WHERE id = :id');
             foreach ($ids as $id) {
-                $stmt->execute([
-                    ':sort' => $i++,
-                    ':id'   => (int) $id,
-                ]);
+                $stmt->execute([':sort' => $i++, ':id' => (int) $id]);
             }
             $success = 'Sıralama güncellendi.';
         }
@@ -77,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Liste
 $sections = [];
-$stmt = $pdo->query('SELECT * FROM home_sections ORDER BY sort_order ASC, id ASC');
+$stmt     = $pdo->query('SELECT * FROM home_sections ORDER BY sort_order ASC, id ASC');
 foreach ($stmt as $row) {
     $row['content'] = [];
     if (!empty($row['content_json'])) {
@@ -121,17 +142,13 @@ include __DIR__ . '/partials_header.php';
                                     <div>
                                         <div class="small text-uppercase text-muted"><?= e($section['section_type']) ?></div>
                                         <div><?= e($section['title'] ?? '') ?></div>
-                                        <?php if (!empty($section['is_active']) === 0): ?>
-                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small">Pasif</span>
-                                        <?php elseif (!(bool)$section['is_active']): ?>
-                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small">Pasif</span>
+                                        <?php if (!(bool)$section['is_active']): ?>
+                                            <span class="badge bg-secondary-subtle text-secondary border small">Pasif</span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
-                                    <a href="?edit=<?= e((string) $section['id']) ?>" class="btn btn-sm btn-outline-secondary">
-                                        Düzenle
-                                    </a>
+                                    <a href="?edit=<?= e((string) $section['id']) ?>" class="btn btn-sm btn-outline-secondary">Düzenle</a>
                                     <button type="submit" name="delete_section" value="1" class="btn btn-sm btn-outline-danger"
                                             onclick="return confirm('Bu bloğu silmek istediğinize emin misiniz?')">
                                         <input type="hidden" name="id" value="<?= e((string) $section['id']) ?>">
@@ -143,17 +160,16 @@ include __DIR__ . '/partials_header.php';
                         <?php endforeach; ?>
                     </ul>
                     <div class="mt-3 text-end">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            Sıralamayı Kaydet
-                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm">Sıralamayı Kaydet</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
     <div class="col-lg-4">
         <?php
-        $editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
+        $editId      = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
         $editSection = null;
         if ($editId) {
             foreach ($sections as $sec) {
@@ -170,12 +186,14 @@ include __DIR__ . '/partials_header.php';
                 <strong><?= $editSection ? 'Bloğu Düzenle' : 'Yeni Blok Ekle' ?></strong>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
                     <input type="hidden" name="save_section" value="1">
+                    <input type="hidden" name="existing_image" value="<?= e($content['image'] ?? '') ?>">
                     <?php if ($editSection): ?>
                         <input type="hidden" name="id" value="<?= e((string) $editSection['id']) ?>">
                     <?php endif; ?>
+
                     <div class="mb-3">
                         <label class="form-label">Blok Tipi</label>
                         <select name="section_type" class="form-select" required>
@@ -194,50 +212,73 @@ include __DIR__ . '/partials_header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label">Başlık</label>
                         <input type="text" name="title" class="form-control"
                                value="<?= e($editSection['title'] ?? '') ?>">
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label">Üst Küçük Başlık (eyebrow)</label>
                         <input type="text" name="eyebrow" class="form-control"
                                value="<?= e($content['eyebrow'] ?? '') ?>">
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label">Alt Başlık / Kısa Açıklama</label>
                         <textarea name="subtitle" class="form-control" rows="2"><?= e($content['subtitle'] ?? '') ?></textarea>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label">Görsel URL</label>
-                        <input type="text" name="image" class="form-control"
-                               value="<?= e($content['image'] ?? '') ?>">
-                        <div class="form-text">Örn: assets/uploads/hero.jpg</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Metin (metin/görsel bloklar için)</label>
+                        <label class="form-label">Metin (metin+görsel bloklar için)</label>
                         <textarea name="text" class="form-control" rows="3"><?= e($content['text'] ?? '') ?></textarea>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Görsel Yükle</label>
+                        <?php if (!empty($content['image'])): ?>
+                            <div class="mb-2">
+                                <img src="<?= e('../' . $content['image']) ?>" alt="" height="60" class="rounded border">
+                                <div class="form-text text-success">Mevcut görsel. Yeni dosya seçersen değişir.</div>
+                            </div>
+                        <?php endif; ?>
+                        <input type="file" name="image_file" class="form-control" accept="image/jpeg,image/png,image/webp">
+                        <div class="form-text">JPG, PNG veya WEBP. Maks 5 MB.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">veya Görsel URL (isteğe bağlı)</label>
+                        <input type="text" name="image_url" class="form-control"
+                               value="<?= e($content['image_url'] ?? '') ?>"
+                               placeholder="https://... veya assets/uploads/...">
+                        <div class="form-text">Yüklenen dosya varsa URL dikkate alınmaz.</div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Buton Metni</label>
                         <input type="text" name="button_text" class="form-control"
                                value="<?= e($content['button_text'] ?? '') ?>">
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label">Buton Linki</label>
                         <input type="text" name="button_url" class="form-control"
                                value="<?= e($content['button_url'] ?? '') ?>">
                     </div>
+
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
                             <?= !isset($editSection['is_active']) || (int)($editSection['is_active']) === 1 ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="is_active">
-                            Bu blok aktif olsun
-                        </label>
+                        <label class="form-check-label" for="is_active">Bu blok aktif olsun</label>
                     </div>
+
                     <button type="submit" class="btn btn-primary">
                         <?= $editSection ? 'Güncelle' : 'Ekle' ?>
                     </button>
+                    <?php if ($editSection): ?>
+                        <a href="homepage.php" class="btn btn-link">İptal</a>
+                    <?php endif; ?>
                 </form>
             </div>
         </div>
@@ -246,5 +287,9 @@ include __DIR__ . '/partials_header.php';
 
 <?php include __DIR__ . '/partials_footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script src="../assets/js/admin-homepage.js"></script>
-
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var list = document.getElementById('home-sections-list');
+        if (list) Sortable.create(list, { handle: '.drag-handle', animation: 150 });
+    });
+</script>

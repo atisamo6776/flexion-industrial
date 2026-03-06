@@ -167,6 +167,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // ---- Spec tablosunu komple sil ----
+        elseif (isset($_POST['delete_spec_table'])) {
+            $tid = (int) ($_POST['table_id'] ?? 0);
+            if ($tid > 0) {
+                $pdo->beginTransaction();
+                $pdo->prepare('DELETE FROM product_specs WHERE table_id = ?')->execute([$tid]);
+                $pdo->prepare('DELETE FROM product_spec_tables WHERE id = ?')->execute([$tid]);
+                $pdo->commit();
+                $success = 'Tablo ve tüm satırları silindi.';
+            }
+        }
+
         // ---- Spec satırı sil ----
         elseif (isset($_POST['delete_spec_row'])) {
             $sid = (int) ($_POST['spec_id'] ?? 0);
@@ -223,6 +235,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // ---- Doküman ekle ----
+        elseif (isset($_POST['add_document'])) {
+            $pid      = (int) ($_POST['product_id'] ?? 0);
+            $docTitle = trim($_POST['doc_title'] ?? '');
+            if ($pid > 0 && $docTitle !== '' && !empty($_FILES['doc_file']['name'])) {
+                $docUploadDir  = __DIR__ . '/../assets/uploads/documents/';
+                $docUploadBase = 'assets/uploads/documents/';
+                $fn = upload_file(
+                    $_FILES['doc_file'],
+                    $docUploadDir,
+                    ['application/pdf', 'application/msword',
+                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                     'application/vnd.ms-excel',
+                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+                    10 * 1024 * 1024
+                );
+                if ($fn) {
+                    $sortStmt = $pdo->prepare('SELECT IFNULL(MAX(sort_order),0)+1 FROM product_documents WHERE product_id = ?');
+                    $sortStmt->execute([$pid]);
+                    $sort = (int) $sortStmt->fetchColumn();
+                    $pdo->prepare('INSERT INTO product_documents (product_id, title, file_path, sort_order, is_active) VALUES (?, ?, ?, ?, 1)')
+                        ->execute([$pid, $docTitle, $docUploadBase . $fn, $sort]);
+                    $success = 'Doküman eklendi.';
+                } else {
+                    $error = 'Dosya yüklenemedi. PDF/Word/Excel, maks 10 MB.';
+                }
+            } else {
+                $error = 'Başlık ve dosya zorunludur.';
+            }
+        }
+
+        // ---- Doküman sil ----
+        elseif (isset($_POST['delete_document'])) {
+            $did = (int) ($_POST['doc_id'] ?? 0);
+            if ($did > 0) {
+                $pdo->prepare('DELETE FROM product_documents WHERE id = ?')->execute([$did]);
+                $success = 'Doküman silindi.';
+            }
+        }
+
+        // ---- Doküman aktif/pasif ----
+        elseif (isset($_POST['toggle_document'])) {
+            $did = (int) ($_POST['doc_id'] ?? 0);
+            if ($did > 0) {
+                $pdo->prepare('UPDATE product_documents SET is_active = NOT is_active WHERE id = ?')->execute([$did]);
+                $success = 'Doküman durumu güncellendi.';
+            }
+        }
+
         // ---- Ürün sıralaması ----
         elseif (isset($_POST['save_order'])) {
             $order = $_POST['order'] ?? [];
@@ -267,6 +328,10 @@ if ($editId) {
         $stmt5 = $pdo->prepare('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order ASC');
         $stmt5->execute([$editId]);
         $extraImages = $stmt5->fetchAll();
+
+        $stmt6 = $pdo->prepare('SELECT * FROM product_documents WHERE product_id = ? ORDER BY sort_order ASC');
+        $stmt6->execute([$editId]);
+        $productDocs = $stmt6->fetchAll();
     }
 }
 
@@ -432,9 +497,21 @@ include __DIR__ . '/partials_header.php';
                 <?php if (!empty($specTables)): ?>
                     <?php foreach ($specTables as $table): ?>
                         <div class="border rounded p-2 mb-3">
-                            <div class="fw-semibold small mb-2">
-                                <?= $table['title'] ? e($table['title']) : '(Başlıksız tablo)' ?>
-                                <span class="badge bg-secondary-subtle text-secondary ms-1">#<?= e((string) $table['id']) ?></span>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="fw-semibold small">
+                                    <?= $table['title'] ? e($table['title']) : '(Başlıksız tablo)' ?>
+                                    <span class="badge bg-secondary-subtle text-secondary ms-1">#<?= e((string) $table['id']) ?></span>
+                                </div>
+                                <form method="post" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
+                                    <input type="hidden" name="delete_spec_table" value="1">
+                                    <input type="hidden" name="table_id" value="<?= e((string) $table['id']) ?>">
+                                    <input type="hidden" name="product_id" value="<?= e((string) $editProduct['id']) ?>">
+                                    <button type="submit" class="btn btn-xs btn-sm btn-danger py-0 px-2"
+                                            onclick="return confirm('Tabloyu ve tüm satırlarını silmek istediğinize emin misiniz?')">
+                                        <i class="bi bi-trash3"></i> Tabloyu Sil
+                                    </button>
+                                </form>
                             </div>
                             <table class="table table-sm mb-2">
                                 <thead><tr><th>Özellik</th><th>Değer</th><th></th></tr></thead>
@@ -549,6 +626,87 @@ include __DIR__ . '/partials_header.php';
                     </ul>
                 <?php else: ?>
                     <p class="text-muted small">Henüz regülasyon yok. Yukarıdan ekle.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php if (isset($editProduct) && $editProduct): ?>
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white"><strong>Dokümanlar / PDF</strong></div>
+            <div class="card-body">
+                <!-- Doküman ekle formu -->
+                <form method="post" enctype="multipart/form-data" class="row g-2 mb-3 align-items-end">
+                    <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
+                    <input type="hidden" name="add_document" value="1">
+                    <input type="hidden" name="product_id" value="<?= e((string) $editProduct['id']) ?>">
+                    <div class="col-md-4">
+                        <label class="form-label form-label-sm">Başlık <span class="text-danger">*</span></label>
+                        <input type="text" name="doc_title" class="form-control form-control-sm" placeholder="Ör: Teknik Katalog" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label form-label-sm">Dosya (PDF/Word/Excel, maks 10 MB) <span class="text-danger">*</span></label>
+                        <input type="file" name="doc_file" class="form-control form-control-sm"
+                               accept=".pdf,.doc,.docx,.xls,.xlsx" required>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-sm btn-outline-primary w-100">+ Doküman Ekle</button>
+                    </div>
+                </form>
+
+                <?php if (!empty($productDocs)): ?>
+                    <table class="table table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Başlık</th>
+                                <th>Dosya</th>
+                                <th>Durum</th>
+                                <th class="text-end">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($productDocs as $doc): ?>
+                                <tr class="<?= !(bool)$doc['is_active'] ? 'table-secondary' : '' ?>">
+                                    <td><?= e($doc['title']) ?></td>
+                                    <td>
+                                        <a href="<?= e('../' . $doc['file_path']) ?>" target="_blank" class="small text-decoration-none">
+                                            <i class="bi bi-file-earmark-arrow-down me-1"></i>
+                                            <?= e(basename($doc['file_path'])) ?>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <?php if ((bool)$doc['is_active']): ?>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle small">Aktif</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary-subtle text-secondary border small">Pasif</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-end">
+                                        <form method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
+                                            <input type="hidden" name="toggle_document" value="1">
+                                            <input type="hidden" name="doc_id" value="<?= e((string) $doc['id']) ?>">
+                                            <button class="btn btn-sm <?= (bool)$doc['is_active'] ? 'btn-outline-warning' : 'btn-outline-success' ?> py-0">
+                                                <?= (bool)$doc['is_active'] ? 'Pasif Yap' : 'Aktif Yap' ?>
+                                            </button>
+                                        </form>
+                                        <form method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
+                                            <input type="hidden" name="delete_document" value="1">
+                                            <input type="hidden" name="doc_id" value="<?= e((string) $doc['id']) ?>">
+                                            <button class="btn btn-sm btn-outline-danger py-0"
+                                                    onclick="return confirm('Bu dokümanı silmek istediğinize emin misiniz?')">Sil</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php else: ?>
+                    <p class="text-muted small">Henüz doküman eklenmemiş.</p>
                 <?php endif; ?>
             </div>
         </div>

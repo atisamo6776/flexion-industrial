@@ -71,6 +71,9 @@ require_admin_login();
                 <a href="news.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'news.php' ? 'active' : '' ?>">
                     <i class="bi bi-newspaper me-2"></i>Haberler / Insights
                 </a>
+                <a href="pages.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'pages.php' ? 'active' : '' ?>">
+                    <i class="bi bi-file-text me-2"></i>Kurumsal Sayfalar
+                </a>
                 <a href="header-footer.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'header-footer.php' ? 'active' : '' ?>">
                     <i class="bi bi-layout-three-columns me-2"></i>Header / Footer
                 </a>

@@ -43,6 +43,16 @@ if ($specTables) {
     }
 }
 
+// Ek görseller
+$imgStmt = $pdo->prepare('SELECT * FROM product_images WHERE product_id = :pid ORDER BY sort_order ASC, id ASC');
+$imgStmt->execute([':pid' => $productId]);
+$extraImages = $imgStmt->fetchAll();
+
+// Dokümanlar
+$docStmt = $pdo->prepare('SELECT * FROM product_documents WHERE product_id = :pid AND is_active = 1 ORDER BY sort_order ASC, id ASC');
+$docStmt->execute([':pid' => $productId]);
+$documents = $docStmt->fetchAll();
+
 // Benzer ürünler (aynı kategoriden, kendisi hariç)
 $relatedStmt = $pdo->prepare('SELECT id, name, main_image, code FROM products WHERE category_id = :cid AND id <> :id AND is_active = 1 ORDER BY sort_order ASC, id ASC LIMIT 3');
 $relatedStmt->execute([':cid' => $product['category_id'], ':id' => $productId]);
@@ -54,10 +64,31 @@ $relatedProducts = $relatedStmt->fetchAll();
         <div class="row mb-4">
             <div class="col-md-6 mb-3 mb-md-0">
                 <?php if (!empty($product['main_image'])): ?>
-                    <img src="<?= e($product['main_image']) ?>" alt="<?= e($product['name']) ?>" class="img-fluid rounded-3 shadow-sm">
+                    <img id="main-product-img" src="<?= e($product['main_image']) ?>" alt="<?= e($product['name']) ?>" class="img-fluid rounded-3 shadow-sm w-100" style="max-height:380px;object-fit:contain;">
                 <?php else: ?>
                     <div class="bg-light border rounded-3 d-flex align-items-center justify-content-center" style="min-height:260px;">
                         <span class="text-muted">Ürün görseli henüz eklenmemiş</span>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!empty($extraImages)): ?>
+                    <div class="d-flex gap-2 mt-3 flex-wrap">
+                        <?php if (!empty($product['main_image'])): ?>
+                            <img src="<?= e($product['main_image']) ?>"
+                                 alt="Ana görsel"
+                                 height="60"
+                                 class="rounded border border-primary gallery-thumb"
+                                 style="cursor:pointer;object-fit:cover;width:60px;"
+                                 onclick="document.getElementById('main-product-img').src=this.src">
+                        <?php endif; ?>
+                        <?php foreach ($extraImages as $eImg): ?>
+                            <img src="<?= e($eImg['image']) ?>"
+                                 alt=""
+                                 height="60"
+                                 class="rounded border gallery-thumb"
+                                 style="cursor:pointer;object-fit:cover;width:60px;"
+                                 onclick="document.getElementById('main-product-img').src=this.src">
+                        <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
             </div>
@@ -126,6 +157,23 @@ $relatedProducts = $relatedStmt->fetchAll();
                         </div>
                     </div>
                 <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($documents)): ?>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="h5 mb-3">Dokümanlar</h2>
+                    <div class="list-group">
+                        <?php foreach ($documents as $doc): ?>
+                            <a href="<?= e($doc['file_path']) ?>" target="_blank" class="list-group-item list-group-item-action d-flex align-items-center gap-3">
+                                <i class="bi bi-file-earmark-arrow-down fs-5 text-primary"></i>
+                                <span><?= e($doc['title']) ?></span>
+                                <span class="ms-auto small text-muted">İndir</span>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
             </div>
         <?php endif; ?>
 
