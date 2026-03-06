@@ -21,8 +21,10 @@ function hf_fetch_settings(PDO $pdo): array
 
 function hf_save_setting(PDO $pdo, string $key, ?string $value): void
 {
-    $stmt = $pdo->prepare('INSERT INTO settings (setting_key, setting_value) VALUES (:k, :v)
-        ON DUPLICATE KEY UPDATE setting_value = :v');
+    $stmt = $pdo->prepare(
+        'INSERT INTO settings (setting_key, setting_value) VALUES (:k, :v)
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
+    );
     $stmt->execute([':k' => $key, ':v' => $value]);
 }
 

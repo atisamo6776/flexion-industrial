@@ -42,15 +42,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (!$error) {
+                $imageMode    = $_POST['image_mode'] ?? 'normal';
+                $imageOpacity = (int) ($_POST['image_opacity'] ?? 100);
+                $imageBlur    = (int) ($_POST['image_blur'] ?? 0);
+                $imageCol     = (int) ($_POST['image_col'] ?? 6);
+                if (!in_array($imageCol, [4, 6, 7], true)) {
+                    $imageCol = 6;
+                }
+
                 $content = [
-                    'eyebrow'     => trim($_POST['eyebrow'] ?? '') ?: null,
-                    'subtitle'    => trim($_POST['subtitle'] ?? '') ?: null,
-                    'button_text' => trim($_POST['button_text'] ?? '') ?: null,
-                    'button_url'  => trim($_POST['button_url'] ?? '') ?: null,
-                    'text'        => trim($_POST['text'] ?? '') ?: null,
-                    'image_url'   => trim($_POST['image_url'] ?? '') ?: null,
+                    'eyebrow'       => trim($_POST['eyebrow'] ?? '') ?: null,
+                    'subtitle'      => trim($_POST['subtitle'] ?? '') ?: null,
+                    'button_text'   => trim($_POST['button_text'] ?? '') ?: null,
+                    'button_url'    => trim($_POST['button_url'] ?? '') ?: null,
+                    'text'          => trim($_POST['text'] ?? '') ?: null,
+                    'image_url'     => trim($_POST['image_url'] ?? '') ?: null,
                     // Önce upload dosyası, yoksa eski dosya
-                    'image'       => $uploadedImage ?? ($existingImage ?: null),
+                    'image'         => $uploadedImage ?? ($existingImage ?: null),
+                    // Hero özel ayarları
+                    'image_mode'    => $imageMode === 'cover' ? 'cover' : 'normal',
+                    'image_opacity' => max(0, min(100, $imageOpacity)),
+                    'image_blur'    => max(0, min(20, $imageBlur)),
+                    'image_col'     => $imageCol,
                 ];
 
                 $json = json_encode($content, JSON_UNESCAPED_UNICODE);
@@ -230,9 +243,80 @@ include __DIR__ . '/partials_header.php';
                         <textarea name="subtitle" class="form-control" rows="2"><?= e($content['subtitle'] ?? '') ?></textarea>
                     </div>
 
+                    <?php
+                    $imageMode    = $content['image_mode'] ?? 'normal';
+                    $imageOpacity = (int) ($content['image_opacity'] ?? 100);
+                    $imageBlur    = (int) ($content['image_blur'] ?? 0);
+                    $imageCol     = (int) ($content['image_col'] ?? 6);
+                    if (!in_array($imageCol, [4, 6, 7], true)) {
+                        $imageCol = 6;
+                    }
+                    ?>
+
+                    <div class="mb-3">
+                        <label class="form-label">Hero Görsel Modu</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="image_mode" id="mode_normal"
+                                   value="normal" <?= $imageMode === 'cover' ? '' : 'checked' ?>>
+                            <label class="form-check-label" for="mode_normal">Normal (sağda görsel kutusu)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="image_mode" id="mode_cover"
+                                   value="cover" <?= $imageMode === 'cover' ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="mode_cover">Doldur (arka plan kaplasın)</label>
+                        </div>
+                        <div class="form-text">Sadece hero tipindeki bloklar için anlamlıdır.</div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label mb-1">Görsel Opaklığı (%)</label>
+                            <input type="range" name="image_opacity" min="0" max="100"
+                                   value="<?= e((string)$imageOpacity) ?>" class="form-range"
+                                   oninput="document.getElementById('opacity_val').value=this.value">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label mb-1 d-none d-md-block">&nbsp;</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" id="opacity_val" class="form-control" min="0" max="100"
+                                       value="<?= e((string)$imageOpacity) ?>"
+                                       oninput="this.value=Math.min(100,Math.max(0,this.value));document.querySelector('input[name=image_opacity]').value=this.value">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label mb-1">Bulanıklık (px)</label>
+                            <input type="range" name="image_blur" min="0" max="20"
+                                   value="<?= e((string)$imageBlur) ?>" class="form-range"
+                                   oninput="document.getElementById('blur_val').value=this.value">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label mb-1 d-none d-md-block">&nbsp;</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" id="blur_val" class="form-control" min="0" max="20"
+                                       value="<?= e((string)$imageBlur) ?>"
+                                       oninput="this.value=Math.min(20,Math.max(0,this.value));document.querySelector('input[name=image_blur]').value=this.value">
+                                <span class="input-group-text">px</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Metin (metin+görsel bloklar için)</label>
                         <textarea name="text" class="form-control" rows="3"><?= e($content['text'] ?? '') ?></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Görsel Genişliği (Metin + Görsel Blokları)</label>
+                        <select name="image_col" class="form-select">
+                            <option value="4" <?= $imageCol === 4 ? 'selected' : '' ?>>Küçük görsel (1/3)</option>
+                            <option value="6" <?= $imageCol === 6 ? 'selected' : '' ?>>Orta görsel (1/2)</option>
+                            <option value="7" <?= $imageCol === 7 ? 'selected' : '' ?>>Büyük görsel (yaklaşık 2/3)</option>
+                        </select>
+                        <div class="form-text">Bu ayar sadece \"Metin + Görsel\" blok tipinde etkili olur.</div>
                     </div>
 
                     <div class="mb-3">
