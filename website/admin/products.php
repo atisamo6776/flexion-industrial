@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Güvenlik doğrulaması başarısız.';
     } else {
+      try {
 
         // ---- Ürün ekle / güncelle ----
         if (isset($_POST['save_product'])) {
@@ -295,6 +296,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $success = 'Ürün sıralaması güncellendi.';
         }
+
+      } catch (Throwable $e) {
+          error_log('[products.php POST] ' . $e->getMessage());
+          $error = 'İşlem gerçekleştirilemedi. Lütfen <a href="migrate.php">migrasyonu</a> kontrol edin. ' .
+                   (defined('APP_ENV') && APP_ENV === 'development' ? htmlspecialchars($e->getMessage()) : '');
+      }
     }
 }
 
@@ -303,7 +310,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ================================================================ */
 $editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 
-$categories = $pdo->query('SELECT id, name FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC')->fetchAll();
+try {
+    $categories = $pdo->query('SELECT id, name FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC')->fetchAll();
+} catch (Throwable $e) {
+    $categories = [];
+    $error = 'Kategori listesi alınamadı. Lütfen <a href="migrate.php">migrasyonu</a> çalıştırın.';
+}
 
 $editProduct = null;
 $specTables  = [];

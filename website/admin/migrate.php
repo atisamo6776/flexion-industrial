@@ -82,6 +82,7 @@ $tableMigrations = [
         `product_id` INT UNSIGNED NOT NULL,
         `title` VARCHAR(255) NULL,
         `sort_order` INT NOT NULL DEFAULT 0,
+        `is_active` TINYINT(1) NOT NULL DEFAULT 1,
         PRIMARY KEY (`id`),
         KEY `idx_product_id` (`product_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
@@ -174,29 +175,59 @@ $tableMigrations = [
         `username` VARCHAR(100) NOT NULL,
         `password` VARCHAR(255) NOT NULL,
         `email` VARCHAR(200) NULL,
+        `is_active` TINYINT(1) NOT NULL DEFAULT 1,
         `must_change_password` TINYINT(1) NOT NULL DEFAULT 0,
         `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (`id`),
         UNIQUE KEY `uk_username` (`username`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 ];
 
 $columnMigrations = [
+    // pages
     ['table' => 'pages',    'column' => 'banner_image',       'sql' => 'ALTER TABLE `pages` ADD COLUMN `banner_image` VARCHAR(255) NULL AFTER `meta_description`'],
     ['table' => 'pages',    'column' => 'banner_title',       'sql' => 'ALTER TABLE `pages` ADD COLUMN `banner_title` VARCHAR(255) NULL AFTER `banner_image`'],
-    ['table' => 'settings', 'column' => 'id',                 'sql' => null], // sadece kontrol, tablo zaten var
-    // Eski kurulumlarda users tablosunda email kolonu olmayabiliyor.
+    ['table' => 'pages',    'column' => 'sort_order',         'sql' => 'ALTER TABLE `pages` ADD COLUMN `sort_order` INT NOT NULL DEFAULT 0'],
+    // users
     ['table' => 'users',    'column' => 'email',              'sql' => 'ALTER TABLE `users` ADD COLUMN `email` VARCHAR(200) NULL'],
-    // AFTER email gibi konum belirten SQL'ler, email kolonu yoksa hata verir. Konum belirtmeden ekliyoruz.
+    ['table' => 'users',    'column' => 'is_active',          'sql' => 'ALTER TABLE `users` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
     ['table' => 'users',    'column' => 'must_change_password','sql' => 'ALTER TABLE `users` ADD COLUMN `must_change_password` TINYINT(1) NOT NULL DEFAULT 0'],
-    ['table' => 'home_sections', 'column' => 'section_type',  'sql' => null], // tablo kontrolü yeterli
-    ['table' => 'footer_links',  'column' => 'column_label',  'sql' => 'ALTER TABLE `footer_links` ADD COLUMN `column_label` VARCHAR(100) NOT NULL DEFAULT \'\' AFTER `column_key`'],
+    // product_spec_tables
+    ['table' => 'product_spec_tables', 'column' => 'is_active', 'sql' => 'ALTER TABLE `product_spec_tables` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
+    // product_regulations
+    ['table' => 'product_regulations', 'column' => 'is_active', 'sql' => 'ALTER TABLE `product_regulations` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
+    ['table' => 'product_regulations', 'column' => 'icon',      'sql' => 'ALTER TABLE `product_regulations` ADD COLUMN `icon` VARCHAR(255) NULL'],
+    // product_documents
+    ['table' => 'product_documents',   'column' => 'is_active', 'sql' => 'ALTER TABLE `product_documents` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
+    // product_images
+    ['table' => 'product_images',      'column' => 'sort_order','sql' => 'ALTER TABLE `product_images` ADD COLUMN `sort_order` INT NOT NULL DEFAULT 0'],
+    // categories
+    ['table' => 'categories', 'column' => 'is_active',          'sql' => 'ALTER TABLE `categories` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
+    ['table' => 'categories', 'column' => 'sort_order',         'sql' => 'ALTER TABLE `categories` ADD COLUMN `sort_order` INT NOT NULL DEFAULT 0'],
+    // news
+    ['table' => 'news',       'column' => 'is_active',          'sql' => 'ALTER TABLE `news` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
+    // home_sections
+    ['table' => 'home_sections', 'column' => 'section_type',    'sql' => 'ALTER TABLE `home_sections` ADD COLUMN `section_type` VARCHAR(50) NOT NULL DEFAULT \'hero\''],
+    ['table' => 'home_sections', 'column' => 'is_active',       'sql' => 'ALTER TABLE `home_sections` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
+    // menu_items
+    ['table' => 'menu_items',  'column' => 'is_active',         'sql' => 'ALTER TABLE `menu_items` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
+    ['table' => 'menu_items',  'column' => 'sort_order',        'sql' => 'ALTER TABLE `menu_items` ADD COLUMN `sort_order` INT NOT NULL DEFAULT 0'],
+    ['table' => 'menu_items',  'column' => 'parent_id',         'sql' => 'ALTER TABLE `menu_items` ADD COLUMN `parent_id` INT UNSIGNED NULL DEFAULT NULL'],
+    // footer_links
+    ['table' => 'footer_links',  'column' => 'column_label',    'sql' => 'ALTER TABLE `footer_links` ADD COLUMN `column_label` VARCHAR(100) NOT NULL DEFAULT \'\' AFTER `column_key`'],
+    ['table' => 'footer_links',  'column' => 'is_active',       'sql' => 'ALTER TABLE `footer_links` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
 ];
 
 $settingDefaults = [
-    'site_title'       => 'Flexion Industrial',
-    'logo_height'      => '40',
-    'news_banner_title'=> 'Haberler & Insights',
+    'site_title'          => 'Flexion Industrial',
+    'logo_height'         => '40',
+    'news_banner_title'   => 'Haberler & Insights',
+    'news_banner_image'   => '',
+    'company_address'     => '',
+    'company_phone'       => '',
+    'company_email'       => '',
+    'footer_about'        => '',
 ];
 
 /* ================================================================

@@ -126,10 +126,16 @@ foreach ($requiredTables as $tbl => $desc) {
 
 // Kolon kontrolleri
 $requiredColumns = [
-    ['table' => 'pages',       'column' => 'banner_image',        'desc' => 'Kurumsal sayfa banner görseli'],
-    ['table' => 'pages',       'column' => 'banner_title',        'desc' => 'Kurumsal sayfa banner başlığı'],
-    ['table' => 'users',       'column' => 'must_change_password', 'desc' => 'İlk giriş şifre değiştirme zorunluluğu'],
-    ['table' => 'footer_links','column' => 'column_label',        'desc' => 'Footer sütun etiketi'],
+    ['table' => 'pages',              'column' => 'banner_image',        'desc' => 'Kurumsal sayfa banner görseli'],
+    ['table' => 'pages',              'column' => 'banner_title',        'desc' => 'Kurumsal sayfa banner başlığı'],
+    ['table' => 'users',              'column' => 'is_active',           'desc' => 'Kullanıcı aktif/pasif (auth için zorunlu)'],
+    ['table' => 'users',              'column' => 'must_change_password', 'desc' => 'İlk giriş şifre değiştirme zorunluluğu'],
+    ['table' => 'footer_links',       'column' => 'column_label',        'desc' => 'Footer sütun etiketi'],
+    ['table' => 'product_spec_tables','column' => 'is_active',           'desc' => 'Spec tablo aktif/pasif'],
+    ['table' => 'product_regulations','column' => 'is_active',           'desc' => 'Regülasyon aktif/pasif'],
+    ['table' => 'product_documents',  'column' => 'is_active',           'desc' => 'Doküman aktif/pasif'],
+    ['table' => 'home_sections',      'column' => 'section_type',        'desc' => 'Ana sayfa blok tipi'],
+    ['table' => 'menu_items',         'column' => 'is_active',           'desc' => 'Menü aktif/pasif'],
 ];
 
 $columnResults = [];
@@ -139,6 +145,24 @@ foreach ($requiredColumns as $cm) {
               && hc_column_exists($pdo, $dbName, $cm['table'], $cm['column']);
     if (!$exists) $missingColumnCount++;
     $columnResults[] = array_merge($cm, ['ok' => $exists]);
+}
+
+// Veri bütünlüğü kontrolleri
+$dataChecks = [];
+$dataCheckQueries = [
+    ['label' => 'Aktif admin kullanıcısı',   'query' => "SELECT COUNT(*) FROM users WHERE is_active = 1",       'warn_zero' => true],
+    ['label' => 'Kategori sayısı',            'query' => "SELECT COUNT(*) FROM categories",                      'warn_zero' => false],
+    ['label' => 'Ürün sayısı',               'query' => "SELECT COUNT(*) FROM products",                        'warn_zero' => false],
+    ['label' => 'Aktif menü öğesi',          'query' => "SELECT COUNT(*) FROM menu_items WHERE is_active = 1",  'warn_zero' => true],
+    ['label' => 'Ana sayfa bloğu',           'query' => "SELECT COUNT(*) FROM home_sections WHERE is_active = 1",'warn_zero' => false],
+];
+foreach ($dataCheckQueries as $dc) {
+    try {
+        $cnt = (int) $pdo->query($dc['query'])->fetchColumn();
+        $dataChecks[] = ['label' => $dc['label'], 'count' => $cnt, 'warn' => $dc['warn_zero'] && $cnt === 0, 'ok' => true];
+    } catch (Throwable $e) {
+        $dataChecks[] = ['label' => $dc['label'], 'count' => 'HATA', 'warn' => true, 'ok' => false, 'err' => $e->getMessage()];
+    }
 }
 
 // Ayar kontrolleri
@@ -170,6 +194,8 @@ try {
     $schemaVersion = 'Erişilemedi';
 }
 
+$dataIssueCount = count(array_filter($dataChecks, fn($c) => $c['warn']));
+
 $allGood = $dbConnected
     && $missingTableCount === 0
     && $missingColumnCount === 0
@@ -192,9 +218,14 @@ include __DIR__ . '/partials_header.php';
                         <?= $missingTableCount ?> eksik tablo,
                     <?php endif; ?>
                     <?php if ($missingColumnCount > 0): ?>
-                        <?= $missingColumnCount ?> eksik kolon tespit edildi.
+                        <?= $missingColumnCount ?> eksik kolon,
                     <?php endif; ?>
-                    500 hatalarını önlemek için migrasyonu çalıştırın.
+                    <?php if ($dataIssueCount > 0): ?>
+                        <?= $dataIssueCount ?> veri uyarısı tespit edildi.
+                    <?php endif; ?>
+                    <?php if ($missingTableCount > 0 || $missingColumnCount > 0): ?>
+                        500 hatalarını önlemek için migrasyonu çalıştırın.
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
             <?php if (!$allGood): ?>
@@ -348,6 +379,44 @@ include __DIR__ . '/partials_header.php';
                                         <span class="badge bg-success">OK</span>
                                     <?php else: ?>
                                         <span class="badge bg-danger">EKSİK</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Veri Bütünlüğü -->
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>Veri Bütünlüğü</strong>
+                <?php if ($dataIssueCount > 0): ?>
+                    <span class="badge bg-warning text-dark"><?= $dataIssueCount ?> uyarı</span>
+                <?php else: ?>
+                    <span class="badge bg-success">OK</span>
+                <?php endif; ?>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr><th>Kontrol</th><th>Sayı / Durum</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($dataChecks as $dc): ?>
+                            <tr class="<?= $dc['warn'] ? 'table-warning' : '' ?>">
+                                <td><?= e($dc['label']) ?></td>
+                                <td class="small text-muted"><?= e((string)$dc['count']) ?></td>
+                                <td>
+                                    <?php if (!$dc['ok']): ?>
+                                        <span class="badge bg-danger" title="<?= e($dc['err'] ?? '') ?>">HATA</span>
+                                    <?php elseif ($dc['warn']): ?>
+                                        <span class="badge bg-warning text-dark">UYARI</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-success">OK</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>

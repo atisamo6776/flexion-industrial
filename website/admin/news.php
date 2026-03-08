@@ -46,44 +46,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $pubAtVal = $pubAt ? date('Y-m-d H:i:s', strtotime($pubAt)) : null;
 
-                if ($id > 0) {
-                    $imgSql = $imagePath ? ', image = :img' : '';
-                    $params = [
-                        ':title'   => $title,
-                        ':slug'    => $slug,
-                        ':summary' => $summary ?: null,
-                        ':content' => $content ?: null,
-                        ':pub'     => $pubAtVal,
-                        ':active'  => $active,
-                        ':id'      => $id,
-                    ];
-                    if ($imagePath) {
-                        $params[':img'] = $imagePath;
-                    }
-                    $pdo->prepare("UPDATE news SET title = :title, slug = :slug, summary = :summary,
-                                   content = :content, published_at = :pub, is_active = :active $imgSql WHERE id = :id")
-                        ->execute($params);
-                    $success = 'Haber güncellendi.';
-                } else {
-                    $pdo->prepare('INSERT INTO news (title, slug, summary, content, image, published_at, is_active)
-                                   VALUES (:title, :slug, :summary, :content, :img, :pub, :active)')
-                        ->execute([
+                try {
+                    if ($id > 0) {
+                        $imgSql = $imagePath ? ', image = :img' : '';
+                        $params = [
                             ':title'   => $title,
                             ':slug'    => $slug,
                             ':summary' => $summary ?: null,
                             ':content' => $content ?: null,
-                            ':img'     => $imagePath,
                             ':pub'     => $pubAtVal,
                             ':active'  => $active,
-                        ]);
-                    $success = 'Haber eklendi.';
+                            ':id'      => $id,
+                        ];
+                        if ($imagePath) {
+                            $params[':img'] = $imagePath;
+                        }
+                        $pdo->prepare("UPDATE news SET title = :title, slug = :slug, summary = :summary,
+                                       content = :content, published_at = :pub, is_active = :active $imgSql WHERE id = :id")
+                            ->execute($params);
+                        $success = 'Haber güncellendi.';
+                    } else {
+                        $pdo->prepare('INSERT INTO news (title, slug, summary, content, image, published_at, is_active)
+                                       VALUES (:title, :slug, :summary, :content, :img, :pub, :active)')
+                            ->execute([
+                                ':title'   => $title,
+                                ':slug'    => $slug,
+                                ':summary' => $summary ?: null,
+                                ':content' => $content ?: null,
+                                ':img'     => $imagePath,
+                                ':pub'     => $pubAtVal,
+                                ':active'  => $active,
+                            ]);
+                        $success = 'Haber eklendi.';
+                    }
+                } catch (Throwable $e) {
+                    error_log('[news.php save_news] ' . $e->getMessage());
+                    $error = 'Haber kaydedilemedi. Lütfen <a href="migrate.php">migrasyonu</a> kontrol edin.';
                 }
             }
         } elseif (isset($_POST['delete_news'])) {
             $id = (int) ($_POST['id'] ?? 0);
             if ($id > 0) {
-                $pdo->prepare('DELETE FROM news WHERE id = ?')->execute([$id]);
-                $success = 'Haber silindi.';
+                try {
+                    $pdo->prepare('DELETE FROM news WHERE id = ?')->execute([$id]);
+                    $success = 'Haber silindi.';
+                } catch (Throwable $e) {
+                    error_log('[news.php delete_news] ' . $e->getMessage());
+                    $error = 'Haber silinemedi.';
+                }
             }
         }
     }
@@ -92,9 +102,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $editId   = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 $editNews = null;
 if ($editId) {
-    $stmt = $pdo->prepare('SELECT * FROM news WHERE id = ?');
-    $stmt->execute([$editId]);
-    $editNews = $stmt->fetch() ?: null;
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM news WHERE id = ?');
+        $stmt->execute([$editId]);
+        $editNews = $stmt->fetch() ?: null;
+    } catch (Throwable $e) {
+        $editNews = null;
+        $error = 'Haber verisi alınamadı.';
+    }
 }
 
 try {

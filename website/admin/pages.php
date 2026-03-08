@@ -30,81 +30,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (!$slug) {
                 $error = 'Geçerli bir slug girilmesi zorunludur (yalnızca a-z, 0-9, -).';
             } else {
-                // Slug çakışma kontrolü
-                $checkStmt = $pdo->prepare('SELECT id FROM pages WHERE slug = :slug AND id <> :id LIMIT 1');
-                $checkStmt->execute([':slug' => $slug, ':id' => $id]);
-                if ($checkStmt->fetch()) {
-                    $error = "Bu slug ($slug) zaten kullanımda. Farklı bir slug seçin.";
-                } else {
-                    $bannerImage = null;
-                    if (!empty($_FILES['banner_image']['name'])) {
-                        $uploadDir = __DIR__ . '/../assets/uploads/';
-                        $fn        = upload_file(
-                            $_FILES['banner_image'],
-                            $uploadDir,
-                            ['image/jpeg', 'image/png', 'image/webp'],
-                            5 * 1024 * 1024
-                        );
-                        if ($fn) {
-                            $bannerImage = 'assets/uploads/' . $fn;
-                        } else {
-                            $error = 'Banner görseli yüklenemedi. JPG/PNG/WEBP en fazla 5 MB olmalı.';
-                        }
-                    }
-
-                    if (!$error) {
-                        if ($id > 0) {
-                            if ($bannerImage !== null) {
-                                $stmt = $pdo->prepare('UPDATE pages SET slug = :slug, title = :title, content = :content, meta_description = :meta, banner_image = :bimg, banner_title = :btitle, is_active = :active WHERE id = :id');
+                try {
+                    // Slug çakışma kontrolü
+                    $checkStmt = $pdo->prepare('SELECT id FROM pages WHERE slug = :slug AND id <> :id LIMIT 1');
+                    $checkStmt->execute([':slug' => $slug, ':id' => $id]);
+                    if ($checkStmt->fetch()) {
+                        $error = "Bu slug ($slug) zaten kullanımda. Farklı bir slug seçin.";
+                    } else {
+                        $bannerImage = null;
+                        if (!empty($_FILES['banner_image']['name'])) {
+                            $uploadDir = __DIR__ . '/../assets/uploads/';
+                            $fn        = upload_file(
+                                $_FILES['banner_image'],
+                                $uploadDir,
+                                ['image/jpeg', 'image/png', 'image/webp'],
+                                5 * 1024 * 1024
+                            );
+                            if ($fn) {
+                                $bannerImage = 'assets/uploads/' . $fn;
                             } else {
-                                $stmt = $pdo->prepare('UPDATE pages SET slug = :slug, title = :title, content = :content, meta_description = :meta, banner_title = :btitle, is_active = :active WHERE id = :id');
+                                $error = 'Banner görseli yüklenemedi. JPG/PNG/WEBP en fazla 5 MB olmalı.';
                             }
-                            $params = [
-                                ':slug'   => $slug,
-                                ':title'  => $title,
-                                ':content'=> $content,
-                                ':meta'   => $metaDesc,
-                                ':btitle' => trim($_POST['banner_title'] ?? ''),
-                                ':active' => $isActive,
-                                ':id'     => $id,
-                            ];
-                            if ($bannerImage !== null) {
-                                $params[':bimg'] = $bannerImage;
+                        }
+
+                        if (!$error) {
+                            if ($id > 0) {
+                                if ($bannerImage !== null) {
+                                    $stmt = $pdo->prepare('UPDATE pages SET slug = :slug, title = :title, content = :content, meta_description = :meta, banner_image = :bimg, banner_title = :btitle, is_active = :active WHERE id = :id');
+                                } else {
+                                    $stmt = $pdo->prepare('UPDATE pages SET slug = :slug, title = :title, content = :content, meta_description = :meta, banner_title = :btitle, is_active = :active WHERE id = :id');
+                                }
+                                $params = [
+                                    ':slug'   => $slug,
+                                    ':title'  => $title,
+                                    ':content'=> $content,
+                                    ':meta'   => $metaDesc,
+                                    ':btitle' => trim($_POST['banner_title'] ?? ''),
+                                    ':active' => $isActive,
+                                    ':id'     => $id,
+                                ];
+                                if ($bannerImage !== null) {
+                                    $params[':bimg'] = $bannerImage;
+                                }
+                                $stmt->execute($params);
+                                $success = 'Sayfa güncellendi.';
+                            } else {
+                                $sort   = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM pages')->fetchColumn();
+                                $stmt   = $pdo->prepare('INSERT INTO pages (slug, title, content, meta_description, banner_image, banner_title, is_active, sort_order) VALUES (:slug, :title, :content, :meta, :bimg, :btitle, :active, :sort)');
+                                $stmt->execute([
+                                    ':slug'   => $slug,
+                                    ':title'  => $title,
+                                    ':content'=> $content,
+                                    ':meta'   => $metaDesc,
+                                    ':bimg'   => $bannerImage,
+                                    ':btitle' => trim($_POST['banner_title'] ?? ''),
+                                    ':active' => $isActive,
+                                    ':sort'   => $sort,
+                                ]);
+                                $success = 'Sayfa eklendi.';
                             }
-                            $stmt->execute($params);
-                            $success = 'Sayfa güncellendi.';
-                        } else {
-                            $sort   = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM pages')->fetchColumn();
-                            $stmt   = $pdo->prepare('INSERT INTO pages (slug, title, content, meta_description, banner_image, banner_title, is_active, sort_order) VALUES (:slug, :title, :content, :meta, :bimg, :btitle, :active, :sort)');
-                            $stmt->execute([
-                                ':slug'   => $slug,
-                                ':title'  => $title,
-                                ':content'=> $content,
-                                ':meta'   => $metaDesc,
-                                ':bimg'   => $bannerImage,
-                                ':btitle' => trim($_POST['banner_title'] ?? ''),
-                                ':active' => $isActive,
-                                ':sort'   => $sort,
-                            ]);
-                            $success = 'Sayfa eklendi.';
                         }
                     }
+                } catch (Throwable $e) {
+                    error_log('[pages.php save_page] ' . $e->getMessage());
+                    $error = 'Sayfa kaydedilemedi. Lütfen <a href="migrate.php">migrasyonu</a> kontrol edin.';
                 }
             }
         } elseif (isset($_POST['delete_page'])) {
             $id = (int) ($_POST['id'] ?? 0);
             if ($id > 0) {
-                $pdo->prepare('DELETE FROM pages WHERE id = :id')->execute([':id' => $id]);
-                $success = 'Sayfa silindi.';
+                try {
+                    $pdo->prepare('DELETE FROM pages WHERE id = :id')->execute([':id' => $id]);
+                    $success = 'Sayfa silindi.';
+                } catch (Throwable $e) {
+                    error_log('[pages.php delete_page] ' . $e->getMessage());
+                    $error = 'Sayfa silinemedi.';
+                }
             }
         } elseif (isset($_POST['save_order'])) {
             $ids  = $_POST['order'] ?? [];
             $i    = 1;
-            $stmt = $pdo->prepare('UPDATE pages SET sort_order = :sort WHERE id = :id');
-            foreach ($ids as $id) {
-                $stmt->execute([':sort' => $i++, ':id' => (int) $id]);
+            try {
+                $stmt = $pdo->prepare('UPDATE pages SET sort_order = :sort WHERE id = :id');
+                foreach ($ids as $id) {
+                    $stmt->execute([':sort' => $i++, ':id' => (int) $id]);
+                }
+                $success = 'Sıralama güncellendi.';
+            } catch (Throwable $e) {
+                error_log('[pages.php save_order] ' . $e->getMessage());
+                $error = 'Sıralama kaydedilemedi.';
             }
-            $success = 'Sıralama güncellendi.';
         }
     }
 }

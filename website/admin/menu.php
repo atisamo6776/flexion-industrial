@@ -24,47 +24,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($title === '' || $url === '') {
                 $error = 'Başlık ve URL zorunludur.';
             } else {
-                if ($id > 0) {
-                    $stmt = $pdo->prepare('UPDATE menu_items SET title = :title, url = :url, parent_id = :parent, is_active = :active WHERE id = :id');
-                    $stmt->execute([
-                        ':title'  => $title,
-                        ':url'    => $url,
-                        ':parent' => $parentId ?: null,
-                        ':active' => $active,
-                        ':id'     => $id,
-                    ]);
-                    $success = 'Menü öğesi güncellendi.';
-                } else {
-                    $sort = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM menu_items')->fetchColumn();
-                    $stmt = $pdo->prepare('INSERT INTO menu_items (title, url, parent_id, sort_order, is_active) VALUES (:title, :url, :parent, :sort, :active)');
-                    $stmt->execute([
-                        ':title'  => $title,
-                        ':url'    => $url,
-                        ':parent' => $parentId ?: null,
-                        ':sort'   => $sort,
-                        ':active' => $active,
-                    ]);
-                    $success = 'Yeni menü öğesi eklendi.';
+                try {
+                    if ($id > 0) {
+                        $stmt = $pdo->prepare('UPDATE menu_items SET title = :title, url = :url, parent_id = :parent, is_active = :active WHERE id = :id');
+                        $stmt->execute([
+                            ':title'  => $title,
+                            ':url'    => $url,
+                            ':parent' => $parentId ?: null,
+                            ':active' => $active,
+                            ':id'     => $id,
+                        ]);
+                        $success = 'Menü öğesi güncellendi.';
+                    } else {
+                        $sort = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM menu_items')->fetchColumn();
+                        $stmt = $pdo->prepare('INSERT INTO menu_items (title, url, parent_id, sort_order, is_active) VALUES (:title, :url, :parent, :sort, :active)');
+                        $stmt->execute([
+                            ':title'  => $title,
+                            ':url'    => $url,
+                            ':parent' => $parentId ?: null,
+                            ':sort'   => $sort,
+                            ':active' => $active,
+                        ]);
+                        $success = 'Yeni menü öğesi eklendi.';
+                    }
+                } catch (Throwable $e) {
+                    error_log('[menu.php save_item] ' . $e->getMessage());
+                    $error = 'Menü öğesi kaydedilemedi. Lütfen <a href="migrate.php">migrasyonu</a> kontrol edin.';
                 }
             }
         } elseif (isset($_POST['delete_item'])) {
             $id = (int) ($_POST['id'] ?? 0);
             if ($id > 0) {
-                $stmt = $pdo->prepare('DELETE FROM menu_items WHERE id = :id OR parent_id = :id');
-                $stmt->execute([':id' => $id]);
-                $success = 'Menü öğesi (ve varsa altları) silindi.';
+                try {
+                    $stmt = $pdo->prepare('DELETE FROM menu_items WHERE id = :id OR parent_id = :id');
+                    $stmt->execute([':id' => $id]);
+                    $success = 'Menü öğesi (ve varsa altları) silindi.';
+                } catch (Throwable $e) {
+                    error_log('[menu.php delete_item] ' . $e->getMessage());
+                    $error = 'Menü öğesi silinemedi.';
+                }
             }
         } elseif (isset($_POST['save_order'])) {
             $order = $_POST['order'] ?? [];
             $i = 1;
-            $stmt = $pdo->prepare('UPDATE menu_items SET sort_order = :sort WHERE id = :id');
-            foreach ($order as $id) {
-                $stmt->execute([
-                    ':sort' => $i++,
-                    ':id'   => (int) $id,
-                ]);
+            try {
+                $stmt = $pdo->prepare('UPDATE menu_items SET sort_order = :sort WHERE id = :id');
+                foreach ($order as $id) {
+                    $stmt->execute([
+                        ':sort' => $i++,
+                        ':id'   => (int) $id,
+                    ]);
+                }
+                $success = 'Menü sıralaması güncellendi.';
+            } catch (Throwable $e) {
+                error_log('[menu.php save_order] ' . $e->getMessage());
+                $error = 'Sıralama kaydedilemedi.';
             }
-            $success = 'Menü sıralaması güncellendi.';
         }
     }
 }

@@ -44,55 +44,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (!$error) {
-                    if ($id > 0) {
-                        $sql = 'UPDATE categories SET name = :name, slug = :slug, short_description = :sdesc, description = :desc,
-                                parent_id = :parent, is_active = :active' . ($imagePath ? ', image = :image' : '') . ' WHERE id = :id';
-                        $params = [
-                            ':name'   => $name,
-                            ':slug'   => $slug,
-                            ':sdesc'  => $shortDesc ?: null,
-                            ':desc'   => $desc ?: null,
-                            ':parent' => $parentId ?: null,
-                            ':active' => $active,
-                            ':id'     => $id,
-                        ];
-                        if ($imagePath) {
-                            $params[':image'] = $imagePath;
+                    try {
+                        if ($id > 0) {
+                            $sql = 'UPDATE categories SET name = :name, slug = :slug, short_description = :sdesc, description = :desc,
+                                    parent_id = :parent, is_active = :active' . ($imagePath ? ', image = :image' : '') . ' WHERE id = :id';
+                            $params = [
+                                ':name'   => $name,
+                                ':slug'   => $slug,
+                                ':sdesc'  => $shortDesc ?: null,
+                                ':desc'   => $desc ?: null,
+                                ':parent' => $parentId ?: null,
+                                ':active' => $active,
+                                ':id'     => $id,
+                            ];
+                            if ($imagePath) {
+                                $params[':image'] = $imagePath;
+                            }
+                            $pdo->prepare($sql)->execute($params);
+                            $success = 'Kategori güncellendi.';
+                        } else {
+                            $sort = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM categories')->fetchColumn();
+                            $stmt = $pdo->prepare('INSERT INTO categories (name, slug, short_description, description, image, parent_id, sort_order, is_active)
+                                                   VALUES (:name, :slug, :sdesc, :desc, :image, :parent, :sort, :active)');
+                            $stmt->execute([
+                                ':name'   => $name,
+                                ':slug'   => $slug,
+                                ':sdesc'  => $shortDesc ?: null,
+                                ':desc'   => $desc ?: null,
+                                ':image'  => $imagePath,
+                                ':parent' => $parentId ?: null,
+                                ':sort'   => $sort,
+                                ':active' => $active,
+                            ]);
+                            $success = 'Yeni kategori eklendi.';
                         }
-                        $pdo->prepare($sql)->execute($params);
-                        $success = 'Kategori güncellendi.';
-                    } else {
-                        $sort = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM categories')->fetchColumn();
-                        $stmt = $pdo->prepare('INSERT INTO categories (name, slug, short_description, description, image, parent_id, sort_order, is_active)
-                                               VALUES (:name, :slug, :sdesc, :desc, :image, :parent, :sort, :active)');
-                        $stmt->execute([
-                            ':name'   => $name,
-                            ':slug'   => $slug,
-                            ':sdesc'  => $shortDesc ?: null,
-                            ':desc'   => $desc ?: null,
-                            ':image'  => $imagePath,
-                            ':parent' => $parentId ?: null,
-                            ':sort'   => $sort,
-                            ':active' => $active,
-                        ]);
-                        $success = 'Yeni kategori eklendi.';
+                    } catch (Throwable $e) {
+                        error_log('[categories.php save_category] ' . $e->getMessage());
+                        $error = 'Kategori kaydedilemedi. Lütfen <a href="migrate.php">migrasyonu</a> kontrol edin.';
                     }
                 }
             }
         } elseif (isset($_POST['delete_category'])) {
             $id = (int) ($_POST['id'] ?? 0);
             if ($id > 0) {
-                $pdo->prepare('DELETE FROM categories WHERE id = :id')->execute([':id' => $id]);
-                $success = 'Kategori silindi.';
+                try {
+                    $pdo->prepare('DELETE FROM categories WHERE id = :id')->execute([':id' => $id]);
+                    $success = 'Kategori silindi.';
+                } catch (Throwable $e) {
+                    error_log('[categories.php delete_category] ' . $e->getMessage());
+                    $error = 'Kategori silinemedi.';
+                }
             }
         } elseif (isset($_POST['save_order'])) {
             $order = $_POST['order'] ?? [];
             $i     = 1;
-            $stmt  = $pdo->prepare('UPDATE categories SET sort_order = :sort WHERE id = :id');
-            foreach ($order as $rid) {
-                $stmt->execute([':sort' => $i++, ':id' => (int) $rid]);
+            try {
+                $stmt  = $pdo->prepare('UPDATE categories SET sort_order = :sort WHERE id = :id');
+                foreach ($order as $rid) {
+                    $stmt->execute([':sort' => $i++, ':id' => (int) $rid]);
+                }
+                $success = 'Sıralama güncellendi.';
+            } catch (Throwable $e) {
+                error_log('[categories.php save_order] ' . $e->getMessage());
+                $error = 'Sıralama kaydedilemedi.';
             }
-            $success = 'Sıralama güncellendi.';
         }
     }
 }

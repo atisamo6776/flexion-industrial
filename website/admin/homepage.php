@@ -68,43 +68,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $json = json_encode($content, JSON_UNESCAPED_UNICODE);
 
-                if ($id > 0) {
-                    $stmt = $pdo->prepare('UPDATE home_sections SET section_type = :type, title = :title, content_json = :content, is_active = :active WHERE id = :id');
-                    $stmt->execute([
-                        ':type'    => $sectionType,
-                        ':title'   => $title,
-                        ':content' => $json,
-                        ':active'  => $isActive,
-                        ':id'      => $id,
-                    ]);
-                    $success = 'Blok güncellendi.';
-                } else {
-                    $sort = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM home_sections')->fetchColumn();
-                    $stmt = $pdo->prepare('INSERT INTO home_sections (section_type, title, content_json, sort_order, is_active) VALUES (:type, :title, :content, :sort, :active)');
-                    $stmt->execute([
-                        ':type'    => $sectionType,
-                        ':title'   => $title,
-                        ':content' => $json,
-                        ':sort'    => $sort,
-                        ':active'  => $isActive,
-                    ]);
-                    $success = 'Yeni blok eklendi.';
+                try {
+                    if ($id > 0) {
+                        $stmt = $pdo->prepare('UPDATE home_sections SET section_type = :type, title = :title, content_json = :content, is_active = :active WHERE id = :id');
+                        $stmt->execute([
+                            ':type'    => $sectionType,
+                            ':title'   => $title,
+                            ':content' => $json,
+                            ':active'  => $isActive,
+                            ':id'      => $id,
+                        ]);
+                        $success = 'Blok güncellendi.';
+                    } else {
+                        $sort = (int) $pdo->query('SELECT IFNULL(MAX(sort_order),0)+1 FROM home_sections')->fetchColumn();
+                        $stmt = $pdo->prepare('INSERT INTO home_sections (section_type, title, content_json, sort_order, is_active) VALUES (:type, :title, :content, :sort, :active)');
+                        $stmt->execute([
+                            ':type'    => $sectionType,
+                            ':title'   => $title,
+                            ':content' => $json,
+                            ':sort'    => $sort,
+                            ':active'  => $isActive,
+                        ]);
+                        $success = 'Yeni blok eklendi.';
+                    }
+                } catch (Throwable $e) {
+                    error_log('[homepage.php save_section] ' . $e->getMessage());
+                    $error = 'Blok kaydedilemedi. Lütfen <a href="migrate.php">migrasyonu</a> kontrol edin.';
                 }
             }
         } elseif (isset($_POST['delete_section'])) {
             $id = (int) ($_POST['id'] ?? 0);
             if ($id > 0) {
-                $pdo->prepare('DELETE FROM home_sections WHERE id = :id')->execute([':id' => $id]);
-                $success = 'Blok silindi.';
+                try {
+                    $pdo->prepare('DELETE FROM home_sections WHERE id = :id')->execute([':id' => $id]);
+                    $success = 'Blok silindi.';
+                } catch (Throwable $e) {
+                    error_log('[homepage.php delete_section] ' . $e->getMessage());
+                    $error = 'Blok silinemedi.';
+                }
             }
         } elseif (isset($_POST['save_order'])) {
             $ids  = $_POST['order'] ?? [];
             $i    = 1;
-            $stmt = $pdo->prepare('UPDATE home_sections SET sort_order = :sort WHERE id = :id');
-            foreach ($ids as $id) {
-                $stmt->execute([':sort' => $i++, ':id' => (int) $id]);
+            try {
+                $stmt = $pdo->prepare('UPDATE home_sections SET sort_order = :sort WHERE id = :id');
+                foreach ($ids as $id) {
+                    $stmt->execute([':sort' => $i++, ':id' => (int) $id]);
+                }
+                $success = 'Sıralama güncellendi.';
+            } catch (Throwable $e) {
+                error_log('[homepage.php save_order] ' . $e->getMessage());
+                $error = 'Sıralama kaydedilemedi.';
             }
-            $success = 'Sıralama güncellendi.';
         }
     }
 }
