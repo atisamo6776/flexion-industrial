@@ -179,16 +179,78 @@ a.text-dark:hover { color: var(--flexion-red) !important; }
     font-weight: 500;
     color: #4b5563;
     transition: color .2s;
+    position: relative;
 }
-.fx-main-nav .nav-link:hover,
+.fx-main-nav .nav-link:hover {
+    color: var(--flexion-red);
+}
 .fx-main-nav .nav-link.active {
     color: var(--flexion-red);
 }
 
-/* Dropdown */
-.fx-main-nav .dropdown-menu { border: none; box-shadow: 0 8px 24px rgba(0,0,0,.1); border-radius: .5rem; }
-.fx-main-nav .dropdown-item { transition: background-color .15s, color .15s; font-size: .9rem; }
-.fx-main-nav .dropdown-item:hover { background-color: #fef2f2; color: var(--flexion-red); }
+/* Aktif sayfa: kırmızı alt çizgi (masaüstü, Bootstrap's navbar bottom ile hizalı) */
+@media (min-width: 992px) {
+    /* Normal nav-link (dropdown-toggle değil) */
+    .fx-main-nav .nav-link.active:not(.dropdown-toggle)::before {
+        content: '';
+        position: absolute;
+        bottom: -1px;          /* navbar border-bottom ile örtüşür */
+        left: .5rem;
+        right: .5rem;
+        height: 2px;
+        background: var(--flexion-red);
+        border-radius: 2px 2px 0 0;
+    }
+    /* Dropdown toggle aktifse box-shadow ile çizgi */
+    .fx-main-nav .dropdown-toggle.active {
+        box-shadow: inset 0 -2px 0 var(--flexion-red);
+        padding-bottom: calc(.5rem - 1px);
+    }
+}
+
+/* ── Dropdown menü stili (referans görsele uygun) ── */
+.fx-main-nav .fx-dd {
+    border: none;
+    border-top: 2px solid var(--flexion-red);
+    box-shadow: 0 12px 36px rgba(0,0,0,.12);
+    border-radius: 0 0 .5rem .5rem;
+    padding: 1rem 0;
+    min-width: 220px;
+}
+
+/* 4+ çocuk için geniş 2 kolonlu görünüm (referans gibi) */
+.fx-main-nav .fx-dd--wide {
+    min-width: 380px;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    padding: 1.25rem 1rem;
+    column-gap: .5rem;
+    row-gap: 0;
+}
+
+.fx-main-nav .fx-dd .dropdown-item {
+    padding: .45rem 1rem;
+    font-size: .9rem;
+    color: #374151;
+    border-radius: 4px;
+    transition: background-color .15s, color .15s;
+    white-space: nowrap;
+}
+.fx-main-nav .fx-dd .dropdown-item:hover,
+.fx-main-nav .fx-dd .dropdown-item:focus {
+    background-color: #fef2f2;
+    color: var(--flexion-red);
+}
+.fx-main-nav .fx-dd .dropdown-item.active {
+    background-color: #fef2f2;
+    color: var(--flexion-red);
+    font-weight: 600;
+}
+
+/* Geniş dropdown'da padding ayarı */
+.fx-main-nav .fx-dd--wide .dropdown-item {
+    padding: .5rem .75rem;
+}
 
 /* ===================================================
    Hero

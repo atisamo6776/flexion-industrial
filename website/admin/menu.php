@@ -122,7 +122,9 @@ include __DIR__ . '/partials_header.php';
                 <?php if ($success): ?>
                     <div class="alert alert-success py-2"><?= $success ?></div>
                 <?php endif; ?>
-                <form method="post">
+
+                <!-- Sıralama formu (delete form ile iç içe GİRMEZ) -->
+                <form method="post" id="sort-form">
                     <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
                     <input type="hidden" name="save_order" value="1">
                     <ul class="list-group" id="menu-items-list">
@@ -144,9 +146,9 @@ include __DIR__ . '/partials_header.php';
                                     <a href="?edit=<?= e((string) $item['id']) ?>" class="btn btn-sm btn-outline-secondary">
                                         Düzenle
                                     </a>
-                                    <button type="submit" name="delete_item" value="1" class="btn btn-sm btn-outline-danger"
-                                            onclick="return confirm('Bu menü öğesini silmek istediğinize emin misiniz?')">
-                                        <input type="hidden" name="id" value="<?= e((string) $item['id']) ?>">
+                                    <!-- Silme: ayrı hidden form aracılığıyla JS ile gönderilir -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            onclick="menuDelete(<?= (int)$item['id'] ?>, '<?= e(addslashes($item['title'])) ?>')">
                                         Sil
                                     </button>
                                     <input type="hidden" name="order[]" value="<?= e((string) $item['id']) ?>">
@@ -159,6 +161,13 @@ include __DIR__ . '/partials_header.php';
                             Sıralamayı Kaydet
                         </button>
                     </div>
+                </form>
+
+                <!-- Silme formu — gizli, JS tarafından tetiklenir (nested form yasak olduğu için ayrı) -->
+                <form method="post" id="delete-form" style="display:none;">
+                    <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
+                    <input type="hidden" name="delete_item" value="1">
+                    <input type="hidden" name="id" id="delete-target-id">
                 </form>
             </div>
         </div>
@@ -260,5 +269,11 @@ include __DIR__ . '/partials_header.php';
             animation: 150,
         });
     });
+
+    function menuDelete(id, title) {
+        if (!confirm('Bu menü öğesini (ve varsa alt öğelerini) silmek istediğinize emin misiniz?\n\n' + title)) return;
+        document.getElementById('delete-target-id').value = id;
+        document.getElementById('delete-form').submit();
+    }
 </script>
 

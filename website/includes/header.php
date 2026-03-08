@@ -7,6 +7,22 @@ $topbarText  = get_setting('topbar_text', 'Industrial rubber and cable solutions
 $logoPath    = get_setting('logo_path', '');
 $logoHeight  = max(20, min(120, (int) get_setting('logo_height', '36')));
 $menu        = get_main_menu();
+
+// ── Aktif sayfa tespiti ──────────────────────────────────────────────────────
+$_navFile  = basename(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: 'index.php');
+$_navQuery = $_SERVER['QUERY_STRING'] ?? '';
+
+function nav_is_active(string $url): bool {
+    global $_navFile, $_navQuery;
+    if ($url === '#' || $url === '' || $url === '/') return false;
+    $p     = parse_url($url);
+    $file  = basename($p['path'] ?? '');
+    $query = $p['query'] ?? '';
+    if ($file !== $_navFile) return false;
+    // Eğer item URL'de query varsa tam eşleşme gerekir, yoksa sadece dosya adı yeter
+    if ($query !== '' && $query !== $_navQuery) return false;
+    return true;
+}
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -45,22 +61,41 @@ $menu        = get_main_menu();
             <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav ms-auto fx-main-nav">
                     <?php foreach ($menu as $item): ?>
+                        <?php
+                        $selfActive   = nav_is_active($item['url']);
+                        $childActive  = false;
+                        if (!empty($item['children'])) {
+                            foreach ($item['children'] as $ch) {
+                                if (nav_is_active($ch['url'])) { $childActive = true; break; }
+                            }
+                        }
+                        $isActive = $selfActive || $childActive;
+                        ?>
                         <?php if (!empty($item['children'])): ?>
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="<?= e($item['url']) ?>" data-bs-toggle="dropdown">
+                                <a class="nav-link dropdown-toggle<?= $isActive ? ' active' : '' ?>"
+                                   href="<?= e($item['url']) ?>"
+                                   data-bs-toggle="dropdown"
+                                   data-bs-auto-close="true"
+                                   aria-expanded="false">
                                     <?= e($item['title']) ?>
                                 </a>
-                                <ul class="dropdown-menu">
+                                <?php $childCount = count($item['children']); ?>
+                                <div class="dropdown-menu fx-dd<?= $childCount > 3 ? ' fx-dd--wide' : '' ?>">
                                     <?php foreach ($item['children'] as $child): ?>
-                                        <li>
-                                            <a class="dropdown-item" href="<?= e($child['url']) ?>"><?= e($child['title']) ?></a>
-                                        </li>
+                                        <a class="dropdown-item<?= nav_is_active($child['url']) ? ' active' : '' ?>"
+                                           href="<?= e($child['url']) ?>">
+                                            <?= e($child['title']) ?>
+                                        </a>
                                     <?php endforeach; ?>
-                                </ul>
+                                </div>
                             </li>
                         <?php else: ?>
                             <li class="nav-item">
-                                <a class="nav-link" href="<?= e($item['url']) ?>"><?= e($item['title']) ?></a>
+                                <a class="nav-link<?= $isActive ? ' active' : '' ?>"
+                                   href="<?= e($item['url']) ?>">
+                                    <?= e($item['title']) ?>
+                                </a>
                             </li>
                         <?php endif; ?>
                     <?php endforeach; ?>
@@ -76,4 +111,3 @@ $menu        = get_main_menu();
     </nav>
 </header>
 <main>
-
