@@ -127,14 +127,32 @@ foreach ($footerLinksRaw as $fl) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // Desktop (≥992px): hover ile dropdown aç/kapat
+// position:fixed menü, parent'ın dışında göründüğünden mouseleave anında tetiklenir.
+// Küçük gecikme + menü üzerinde fare kalırsa iptal et.
 (function () {
     if (window.innerWidth < 992) return;
     document.querySelectorAll('.fx-main-nav .dropdown').forEach(function (el) {
         var toggle = el.querySelector('[data-bs-toggle="dropdown"]');
         if (!toggle) return;
-        var dd = bootstrap.Dropdown.getOrCreateInstance(toggle);
-        el.addEventListener('mouseenter', function () { dd.show(); });
-        el.addEventListener('mouseleave', function () { dd.hide(); });
+        var dd   = bootstrap.Dropdown.getOrCreateInstance(toggle);
+        var menu = el.querySelector('.dropdown-menu');
+        var timer = null;
+
+        function openDD()  { clearTimeout(timer); dd.show(); }
+        function closeDD() {
+            clearTimeout(timer);
+            timer = setTimeout(function () { dd.hide(); }, 150);
+        }
+
+        el.addEventListener('mouseenter', openDD);
+        el.addEventListener('mouseleave', closeDD);
+
+        // Menü position:fixed olduğu için parent'ın dışında; menü üzerinde
+        // fareyi tutunca kapanmayı iptal et
+        if (menu) {
+            menu.addEventListener('mouseenter', function () { clearTimeout(timer); });
+            menu.addEventListener('mouseleave', closeDD);
+        }
     });
 }());
 </script>

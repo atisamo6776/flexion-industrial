@@ -229,17 +229,21 @@ a.text-dark:hover { color: var(--flexion-red) !important; }
         top: auto;   /* Bootstrap'in auto konumlandırmasını sıfırla */
         margin-top: 0 !important;
     }
-    /* Dropdown içindeki container ile linkleri hizala */
+    /* Dropdown içindeki container: nav items sağda olduğundan itemları sağa hizala */
     .fx-main-nav .fx-dd > .container {
         display: flex;
         flex-wrap: wrap;
         gap: .25rem 1.5rem;
+        justify-content: flex-end;
     }
-    /* Geniş (fx-dd--wide) dropdown için 2 kolon grid */
+    /* Geniş (fx-dd--wide) dropdown için 2 kolon grid — sağa hizalı */
     .fx-main-nav .fx-dd--wide > .container {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: .25rem .75rem;
+        max-width: 60%;
+        margin-left: auto;
+        margin-right: 0;
     }
 }
 
@@ -521,21 +525,20 @@ div.fx-card-img {
     border: none;
     text-align: left;
     font-size: .88rem;
-    color: #374151;
+    color: #374151 !important;
     cursor: pointer;
     transition: color .2s, background-color .15s;
     font-family: inherit;
     text-decoration: none;
 }
 .fx-cat-btn:hover {
-    color: var(--flexion-red);
+    color: var(--flexion-red) !important;
     background-color: #fef9f9;
 }
 
-/* Aktif / açık kategori */
-.fx-cat-btn[aria-expanded="true"],
+/* Aktif / açık kategori — sadece seçili olan kırmızı */
 .fx-cat-btn.fx-cat-active {
-    color: var(--flexion-red);
+    color: var(--flexion-red) !important;
     font-weight: 600;
 }
 
@@ -548,6 +551,8 @@ div.fx-card-img {
 }
 .fx-cat-btn[aria-expanded="true"] .fx-cat-chevron {
     transform: rotate(180deg);
+}
+.fx-cat-btn.fx-cat-active .fx-cat-chevron {
     color: var(--flexion-red);
 }
 
