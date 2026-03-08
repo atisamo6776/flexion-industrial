@@ -117,10 +117,10 @@ include __DIR__ . '/partials_header.php';
             </div>
             <div class="card-body">
                 <?php if ($error): ?>
-                    <div class="alert alert-danger py-2"><?= e($error) ?></div>
+                    <div class="alert alert-danger py-2"><?= $error ?></div>
                 <?php endif; ?>
                 <?php if ($success): ?>
-                    <div class="alert alert-success py-2"><?= e($success) ?></div>
+                    <div class="alert alert-success py-2"><?= $success ?></div>
                 <?php endif; ?>
                 <form method="post">
                     <input type="hidden" name="csrf_token" value="<?= e($token) ?>">

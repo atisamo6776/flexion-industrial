@@ -90,6 +90,9 @@ require_admin_login();
                 <a href="migrate.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'migrate.php' ? 'active' : '' ?>">
                     <i class="bi bi-database-gear me-2"></i>DB Migrasyonu
                 </a>
+                <a href="error_view.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'error_view.php' ? 'active' : '' ?>">
+                    <i class="bi bi-bug me-2"></i>Hata Logu
+                </a>
                 <a href="logout.php" class="nav-link py-2 px-2">
                     <i class="bi bi-box-arrow-right me-2"></i>Çıkış
                 </a>

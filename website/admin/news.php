@@ -132,10 +132,10 @@ include __DIR__ . '/partials_header.php';
             </div>
             <div class="card-body p-0">
                 <?php if ($error): ?>
-                    <div class="alert alert-danger m-3 py-2"><?= e($error) ?></div>
+                    <div class="alert alert-danger m-3 py-2"><?= $error ?></div>
                 <?php endif; ?>
                 <?php if ($success): ?>
-                    <div class="alert alert-success m-3 py-2"><?= e($success) ?></div>
+                    <div class="alert alert-success m-3 py-2"><?= $success ?></div>
                 <?php endif; ?>
                 <ul class="list-group list-group-flush">
                     <?php foreach ($newsList as $item): ?>

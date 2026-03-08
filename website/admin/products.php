@@ -1,4 +1,15 @@
 <?php
+// ---- Hata yakalama: PHP fatal hataları log dosyasına yaz ----
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        $msg = date('[Y-m-d H:i:s] ') . 'FATAL(' . $err['type'] . '): '
+             . $err['message'] . ' in ' . $err['file'] . ':' . $err['line'] . PHP_EOL;
+        @file_put_contents(__DIR__ . '/flexion_errors.log', $msg, FILE_APPEND | LOCK_EX);
+    }
+});
+@ini_set('log_errors', 1);
+@ini_set('error_log', __DIR__ . '/flexion_errors.log');
 
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/upload_helper.php';
@@ -385,8 +396,8 @@ $token = csrf_token();
 include __DIR__ . '/partials_header.php';
 ?>
 
-<?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
-<?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
+<?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
+<?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
 
 <div class="row">
     <!-- SOL: Ürün Listesi -->
@@ -470,7 +481,7 @@ include __DIR__ . '/partials_header.php';
                             <option value="">Seç...</option>
                             <?php foreach ($categories as $cat): ?>
                                 <option value="<?= e((string) $cat['id']) ?>"
-                                    <?= isset($editProduct['category_id']) && (int)$editProduct['category_id'] === (int)$cat['id'] ? 'selected' : '' ?>>
+                                    <?= (isset($editProduct) && isset($editProduct['category_id']) && (int)$editProduct['category_id'] === (int)$cat['id']) ? 'selected' : '' ?>>
                                     <?= e($cat['name']) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -486,7 +497,7 @@ include __DIR__ . '/partials_header.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Ana Görsel</label>
-                        <?php if (!empty($editProduct['main_image'])): ?>
+                        <?php if (!empty($editProduct) && !empty($editProduct['main_image'])): ?>
                             <div class="mb-2">
                                 <img src="<?= e('../' . $editProduct['main_image']) ?>" height="60" class="rounded border">
                             </div>
@@ -507,7 +518,7 @@ include __DIR__ . '/partials_header.php';
                     </div>
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" name="is_active" id="prod_active"
-                            <?= !isset($editProduct['is_active']) || (int)($editProduct['is_active'] ?? 1) === 1 ? 'checked' : '' ?>>
+                            <?= (!isset($editProduct) || !isset($editProduct['is_active']) || (int)$editProduct['is_active'] === 1) ? 'checked' : '' ?>>
                         <label class="form-check-label" for="prod_active">Aktif</label>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
