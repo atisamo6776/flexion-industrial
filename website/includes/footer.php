@@ -118,8 +118,10 @@ foreach ($footerLinksRaw as $fl) {
         </div>
 
         <div class="fx-footer-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <span class="small"><?= e($footerText) ?></span>
-            <span class="small text-muted">Powered by Flexion</span>
+            <span class="small text-white"><?= e($footerText) ?></span>
+            <span class="small text-white">
+                Powered by <a href="https://kesicioglu.com" target="_blank" rel="noopener" class="fw-bold text-white text-decoration-none">Kesicioglu</a>
+            </span>
         </div>
     </div>
 </footer>
