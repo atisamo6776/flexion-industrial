@@ -188,6 +188,29 @@ a.text-dark:hover { color: var(--flexion-red) !important; }
     color: var(--flexion-red);
 }
 
+/* Tıklayınca çıkan mavi focus çerçevesini kaldır (yerine kırmızı odak stili uygula) */
+.fx-main-nav .nav-link:focus {
+    outline: none;
+}
+.fx-main-nav .nav-link:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+@media (min-width: 992px) {
+    /* Klavye ile odak: hover'daki kırmızı çizgiyi göster */
+    .fx-main-nav .nav-link:focus-visible {
+        outline: none;
+        box-shadow: none;
+    }
+    .fx-main-nav .nav-link:not(.dropdown-toggle):focus-visible::after {
+        transform: scaleX(1);
+    }
+    .fx-main-nav .dropdown-toggle:focus-visible {
+        box-shadow: inset 0 -2px 0 var(--flexion-red);
+        padding-bottom: calc(.5rem - 1px);
+    }
+}
+
 /* Hover: üst menü linklerinde ince kırmızı alt çizgi kayar girer (masaüstü) */
 @media (min-width: 992px) {
     .fx-main-nav .nav-link::after {
