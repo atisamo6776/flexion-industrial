@@ -102,13 +102,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $SUPPORTED = ['en', 'de', 'it', 'fr'];
             if ($sectionId > 0 && in_array($lang, $SUPPORTED, true)) {
                 $trTitle   = trim($_POST['tr_title'] ?? '');
-                $trContent = [
-                    'eyebrow'     => trim($_POST['tr_eyebrow'] ?? '') ?: null,
-                    'subtitle'    => trim($_POST['tr_subtitle'] ?? '') ?: null,
-                    'button_text' => trim($_POST['tr_button_text'] ?? '') ?: null,
-                    'button_url'  => trim($_POST['tr_button_url'] ?? '') ?: null,
-                    'text'        => trim($_POST['tr_text'] ?? '') ?: null,
-                ];
+
+                // Ana bloktan mevcut içeriği al (görseller burada)
+                $baseContent = [];
+                try {
+                    $baseRow = $pdo->prepare('SELECT content_json FROM home_sections WHERE id = ? LIMIT 1');
+                    $baseRow->execute([$sectionId]);
+                    $baseJson = $baseRow->fetchColumn();
+                    if ($baseJson) {
+                        $decoded = json_decode($baseJson, true);
+                        if (is_array($decoded)) $baseContent = $decoded;
+                    }
+                } catch (Throwable $ignored) {}
+
+                // Varsa mevcut çeviri içeriğini de al (önceki kaydın alanları)
+                try {
+                    $existTr = $pdo->prepare('SELECT content_json FROM home_section_translations WHERE section_id = ? AND language = ? LIMIT 1');
+                    $existTr->execute([$sectionId, $lang]);
+                    $existJson = $existTr->fetchColumn();
+                    if ($existJson) {
+                        $existDecoded = json_decode($existJson, true);
+                        if (is_array($existDecoded)) {
+                            $baseContent = array_merge($baseContent, $existDecoded);
+                        }
+                    }
+                } catch (Throwable $ignored) {}
+
+                // Görselleri ana içerikten koru; sadece metin alanlarını güncelle
+                $imageKeys = ['image', 'image_url', 'image_mode', 'image_opacity', 'image_blur', 'image_col'];
+                $trContent = [];
+                foreach ($imageKeys as $ik) {
+                    if (array_key_exists($ik, $baseContent)) {
+                        $trContent[$ik] = $baseContent[$ik];
+                    }
+                }
+                $trContent['eyebrow']     = trim($_POST['tr_eyebrow'] ?? '') ?: null;
+                $trContent['subtitle']    = trim($_POST['tr_subtitle'] ?? '') ?: null;
+                $trContent['button_text'] = trim($_POST['tr_button_text'] ?? '') ?: null;
+                $trContent['button_url']  = trim($_POST['tr_button_url'] ?? '') ?: null;
+                $trContent['text']        = trim($_POST['tr_text'] ?? '') ?: null;
+
                 $trJson = json_encode($trContent, JSON_UNESCAPED_UNICODE);
                 try {
                     $pdo->prepare(

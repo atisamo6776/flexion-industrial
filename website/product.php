@@ -120,7 +120,7 @@ if (!$product) {
     <div class="container py-5">
         <h1 class="h3 mb-3"><?= e(t('prod_not_found', 'Product not found')) ?></h1>
         <p class="text-muted"><?= e(t('prod_not_found_desc', 'The product you are looking for does not exist or is inactive.')) ?></p>
-        <a href="sectors" class="btn btn-outline-secondary btn-sm"><?= e(t('prod_back', 'Back to products')) ?></a>
+        <a href="<?= e(categories_list_url()) ?>" class="btn btn-outline-secondary btn-sm"><?= e(t('prod_back', 'Back to products')) ?></a>
     </div>
     <?php
     require_once __DIR__ . '/includes/footer.php';
@@ -195,7 +195,7 @@ try {
         <nav class="mb-4" aria-label="breadcrumb">
             <ol class="breadcrumb small">
                 <li class="breadcrumb-item"><a href="<?= e(home_url()) ?>"><?= e(t('nav_home', 'Home')) ?></a></li>
-                <li class="breadcrumb-item"><a href="sectors"><?= e(t('nav_products', 'Products')) ?></a></li>
+                <li class="breadcrumb-item"><a href="<?= e(categories_list_url()) ?>"><?= e(t('nav_products', 'Products')) ?></a></li>
                 <li class="breadcrumb-item">
                     <a href="category?id=<?= e((string)$product['category_id']) ?>"><?= e($product['category_name']) ?></a>
                 </li>

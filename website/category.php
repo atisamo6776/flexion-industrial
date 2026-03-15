@@ -56,7 +56,7 @@ if (!$category) {
     <div class="container py-5">
         <h1 class="h3 mb-3"><?= e(t('cat_not_found', 'Category not found')) ?></h1>
         <p class="text-muted"><?= e(t('cat_not_found_desc', 'The category you are looking for does not exist or is inactive.')) ?></p>
-        <a href="sectors" class="btn btn-outline-secondary btn-sm"><?= e(t('cat_back_sectors', 'Back to all sectors')) ?></a>
+        <a href="<?= e(categories_list_url()) ?>" class="btn btn-outline-secondary btn-sm"><?= e(t('cat_back_categories', 'Back to all categories')) ?></a>
     </div>
     <?php
     require_once __DIR__ . '/includes/footer.php';

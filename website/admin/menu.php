@@ -232,21 +232,21 @@ include __DIR__ . '/partials_header.php';
                         <label class="form-label">URL</label>
                         <input type="text" name="url" class="form-control"
                                value="<?= e($editItem['url'] ?? '') ?>" required>
-                        <div class="form-text">Örn: index.php, sectors.php, category.php?id=1</div>
+                        <div class="form-text">e.g.: /, /categories, /news, page.php?slug=about-us</div>
                         <div class="mt-2">
-                            <div class="small text-muted mb-1">Mevcut sayfalardan seç:</div>
+                            <div class="small text-muted mb-1">Quick fill:</div>
                             <div class="d-flex flex-wrap gap-1">
                                 <button type="button" class="btn btn-sm btn-outline-secondary"
-                                        onclick="document.querySelector('input[name=url]').value='index.php'">
-                                    Ana Sayfa
+                                        onclick="document.querySelector('input[name=url]').value='/'">
+                                    Home
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary"
-                                        onclick="document.querySelector('input[name=url]').value='sectors.php'">
-                                    Sektörler
+                                        onclick="document.querySelector('input[name=url]').value='/categories'">
+                                    Categories
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary"
-                                        onclick="document.querySelector('input[name=url]').value='news.php'">
-                                    Haberler
+                                        onclick="document.querySelector('input[name=url]').value='/news'">
+                                    News
                                 </button>
                                 <?php foreach ($pageLinks as $link => $title): ?>
                                     <button type="button" class="btn btn-sm btn-outline-secondary"

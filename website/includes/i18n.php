@@ -38,6 +38,16 @@ function page_url(string $slug): string {
     return $prefix !== '' ? $prefix . '/' . $slug : '/' . $slug;
 }
 
+// ── Seçili dilde kategoriler listesi URL'i ───────────────────────────────────
+// EN: /categories, DE: /de/kategorien, IT: /it/categorie, FR: /fr/categories
+function categories_list_url(): string {
+    $slugs = ['en' => 'categories', 'de' => 'kategorien', 'it' => 'categorie', 'fr' => 'categories'];
+    $l = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+    $slug = $slugs[$l] ?? 'categories';
+    $prefix = lang_prefix();
+    return $prefix !== '' ? $prefix . '/' . $slug : '/' . $slug;
+}
+
 // ── İç linki seçili dile göre prefix'le ────────────────────────────────────
 // Harici URL'ler (http/https ile başlayanlar) değişmeden döner.
 // Ana sayfa (index.php, /index.php, /) → her zaman home_url() (temiz URL: / veya /de/).

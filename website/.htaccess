@@ -48,6 +48,20 @@ Options -Indexes
     # Sadece dil kodu: /de, /de/, /fr, /it → ana sayfa
     RewriteRule ^(de|fr|it)/?$ index.php?lang=$1 [L,QSA]
 
+    # Categories listesi (dil bazlı slug): /categories, /de/kategorien, /it/categorie, /fr/categories
+    RewriteRule ^categories/?$ categories.php [L,QSA]
+    RewriteRule ^(de)/kategorien/?$ categories.php?lang=$1 [L,QSA]
+    RewriteRule ^(it)/categorie/?$ categories.php?lang=$1 [L,QSA]
+    RewriteRule ^(fr)/categories/?$ categories.php?lang=$1 [L,QSA]
+    RewriteRule ^(de|it|fr)/categories/?$ categories.php?lang=$1 [L,QSA]
+
+    # Eski sectors URL'leri 301 ile yeniye yönlendir
+    RewriteRule ^sectors/?$ /categories [R=301,L]
+    RewriteRule ^sectors\.php$ /categories [R=301,L]
+    RewriteRule ^(de)/sectors/?$ /de/kategorien [R=301,L]
+    RewriteRule ^(it)/sectors/?$ /it/categorie [R=301,L]
+    RewriteRule ^(fr)/sectors/?$ /fr/categories [R=301,L]
+
     # /de/haberler/haber-slug → news slug
     RewriteRule ^(de|fr|it)/haberler/([a-z0-9][a-z0-9\-\._%]*)/?$ news.php?slug=$2&lang=$1 [L,QSA]
     RewriteRule ^haberler/([a-z0-9][a-z0-9\-\._%]*)/?$ news.php?slug=$1 [L,QSA]

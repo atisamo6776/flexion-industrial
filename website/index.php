@@ -56,7 +56,7 @@ if (empty($sections)) {
                 'eyebrow'     => 'Flexion Industrial',
                 'subtitle'    => t('home_hero_subtitle', 'High-performance cable solutions for demanding industrial environments.'),
                 'button_text' => t('home_hero_btn', 'View Products'),
-                'button_url'  => 'sectors',
+                'button_url'  => 'categories',
             ],
         ],
         [
@@ -148,7 +148,7 @@ if (empty($sections)) {
                         <h2 class="h3 mb-1"><?= e($section['title'] ?? ($c['title'] ?? 'Uygulama Sektörleri')) ?></h2>
                         <p class="text-muted mb-0 small"><?= e($c['subtitle'] ?? '') ?></p>
                     </div>
-                    <a href="sectors" class="btn btn-outline-secondary btn-sm"><?= e(t('home_btn_view_sectors', 'View All Sectors')) ?></a>
+                    <a href="<?= e(categories_list_url()) ?>" class="btn btn-outline-secondary btn-sm"><?= e(t('home_btn_view_categories', 'View All Categories')) ?></a>
                 </div>
                 <div class="row g-3">
                     <?php foreach ($categories as $cat):
@@ -159,7 +159,7 @@ if (empty($sections)) {
                         $_cName  = $_cTr['name']              ?? $cat['name'];
                         $_cDesc  = $_cTr['short_description'] ?? ($cat['short_description'] ?? '');
                         $_cSlug  = $_cTr['slug']              ?? ($cat['slug'] ?? '');
-                        $_cHref  = $_cSlug ? '/' . ltrim($_cSlug, '/') : 'category?id=' . $cat['id'];
+                        $_cHref  = $_cSlug ? localized_url('/' . $_cSlug) : localized_url('/categories');
                     ?>
                         <div class="col-6 col-md-3">
                             <a href="<?= e($_cHref) ?>" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">

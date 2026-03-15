@@ -596,7 +596,8 @@ function save_translation(string $table, string $fkCol, int $id, string $lang, a
         $fields['language'] = $lang;
         $cols   = implode(', ', array_map(fn($c) => "`{$c}`", array_keys($fields)));
         $ph     = implode(', ', array_map(fn($c) => ":{$c}", array_keys($fields)));
-        $update = implode(', ', array_map(fn($c) => "`{$c}` = :{$c}", array_keys($fields)));
+        // VALUES() kullanarak ON DUPLICATE KEY UPDATE'de tekrar parametre gerekmiyor (HY093 önlenir)
+        $update = implode(', ', array_map(fn($c) => "`{$c}` = VALUES(`{$c}`)", array_keys($fields)));
         $pdo->prepare("INSERT INTO `{$table}` ({$cols}) VALUES ({$ph}) ON DUPLICATE KEY UPDATE {$update}")
             ->execute($fields);
     } catch (Throwable $e) {
