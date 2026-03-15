@@ -1,5 +1,6 @@
 <?php
 
+require_once __DIR__ . '/i18n.php';
 require_once __DIR__ . '/functions.php';
 
 $siteTitle   = get_setting('site_title', 'Flexion Industrial');
@@ -16,18 +17,19 @@ function nav_is_active(string $url): bool {
     global $_navFile, $_navQuery;
     if ($url === '#' || $url === '' || $url === '/') return false;
     $p       = parse_url($url);
-    // .php uzantısını soy — temiz URL ve .php uzantılı URL'ler eşleşsin
     $file    = preg_replace('/\.php$/', '', basename($p['path'] ?? ''));
     $query   = $p['query'] ?? '';
     $reqFile = preg_replace('/\.php$/', '', $_navFile);
     if ($file !== $reqFile) return false;
-    // item URL'de query varsa tam eşleşme gerekir
     if ($query !== '' && $query !== $_navQuery) return false;
     return true;
 }
+
+$_langLabels = ['en' => 'English', 'de' => 'Deutsch', 'it' => 'Italiano', 'fr' => 'Français'];
+$_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr' => '🇫🇷'];
 ?>
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= e(CURRENT_LANG) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -46,7 +48,7 @@ function nav_is_active(string $url): bool {
     <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
-<!-- Topbar: normal akış, scroll ile kaybolur -->
+<!-- Topbar -->
 <div class="fx-topbar py-1">
     <div class="container d-flex justify-content-between align-items-center">
         <span class="text-muted"><?= e($topbarText) ?></span>
@@ -56,7 +58,7 @@ function nav_is_active(string $url): bool {
     </div>
 </div>
 
-<!-- Navbar: sticky — sadece bu kısım sayfayla birlikte aşağı inmez -->
+<!-- Navbar -->
 <nav class="navbar navbar-expand-lg bg-white border-bottom fx-sticky-nav">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="/">
@@ -67,9 +69,13 @@ function nav_is_active(string $url): bool {
             <span class="fx-header-logo">FLEXION</span>
             <?php endif; ?>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+
+        <!-- Burger: mobilde tam ekran overlay'i açar -->
+        <button class="navbar-toggler" type="button" id="fxBurger" aria-label="Menüyü aç" aria-expanded="false" aria-controls="fxMobileOverlay">
             <span class="navbar-toggler-icon"></span>
         </button>
+
+        <!-- Desktop navbar collapse -->
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav ms-auto fx-main-nav">
                 <?php foreach ($menu as $item): ?>
@@ -114,13 +120,167 @@ function nav_is_active(string $url): bool {
                     <?php endif; ?>
                 <?php endforeach; ?>
             </ul>
+
+            <!-- Arama formu -->
             <form action="search" method="get" class="d-flex ms-lg-3 mt-2 mt-lg-0">
                 <input type="search" name="q" class="form-control form-control-sm" placeholder="Ürün ara...">
                 <button class="btn btn-sm btn-primary ms-1" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
             </form>
-        </div>
+
+            <!-- Dil seçici -->
+            <div class="fx-lang-dropdown ms-2" id="fxLangDropdown">
+                <button class="fx-lang-btn" id="fxLangBtn" aria-haspopup="true" aria-expanded="false" type="button">
+                    <?= strtoupper(CURRENT_LANG) ?>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="fx-lang-menu" id="fxLangMenu" role="menu">
+                    <?php foreach (SUPPORTED_LANGS as $_l): ?>
+                        <a href="<?= e(lang_switch_url($_l)) ?>"
+                           class="<?= $_l === CURRENT_LANG ? 'active' : '' ?>"
+                           role="menuitem"
+                           <?php if ($_l !== CURRENT_LANG): ?>
+                           onclick="document.cookie='fx_lang=<?= $_l ?>;path=/;max-age=31536000';"
+                           <?php endif; ?>>
+                            <?= e($_langLabels[$_l] ?? strtoupper($_l)) ?>
+                            <?php if ($_l === CURRENT_LANG): ?><i class="bi bi-check ms-auto"></i><?php endif; ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div><!-- /navbar-collapse -->
     </div>
 </nav>
+
+<!-- =====================================================
+     Mobil Tam Ekran Menü Overlay (< 992px)
+===================================================== -->
+<div class="fx-mobile-overlay" id="fxMobileOverlay" aria-hidden="true" role="dialog" aria-label="Navigasyon menüsü">
+    <!-- Başlık: logo + kapat butonu -->
+    <div class="fx-mobile-overlay-head">
+        <a href="/" class="text-decoration-none d-flex align-items-center gap-2" onclick="closeMobileMenu()">
+            <?php if ($logoPath): ?>
+                <img src="<?= e($logoPath) ?>" alt="<?= e($siteTitle) ?>" height="32" style="filter:brightness(0) invert(1);">
+            <?php endif; ?>
+            <?php if (get_setting('show_header_title', '1') === '1'): ?>
+            <span class="fw-bold text-white fs-5 letter-spacing-1">FLEXION</span>
+            <?php endif; ?>
+        </a>
+        <button class="fx-mobile-close-btn" id="fxMobileClose" aria-label="Menüyü kapat" type="button">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <!-- Menü linkleri -->
+    <ul class="fx-mobile-nav list-unstyled mb-0">
+        <?php foreach ($menu as $_mItem): ?>
+            <?php if (!empty($_mItem['children'])): ?>
+                <li class="fx-mob-item fx-mob-has-children">
+                    <div class="fx-mob-item-row">
+                        <a href="<?= e($_mItem['url']) ?>" class="fx-mob-link" onclick="closeMobileMenu()">
+                            <?= e($_mItem['title']) ?>
+                        </a>
+                        <button type="button" class="fx-mob-toggle" aria-label="Alt menüyü aç/kapat">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                    <ul class="fx-mob-children list-unstyled mb-0">
+                        <?php foreach ($_mItem['children'] as $_mChild): ?>
+                            <li>
+                                <a href="<?= e($_mChild['url']) ?>" class="fx-mob-child-link" onclick="closeMobileMenu()">
+                                    <?= e($_mChild['title']) ?>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </li>
+            <?php else: ?>
+                <li class="fx-mob-item">
+                    <div class="fx-mob-item-row">
+                        <a href="<?= e($_mItem['url']) ?>" class="fx-mob-link" onclick="closeMobileMenu()">
+                            <?= e($_mItem['title']) ?>
+                        </a>
+                    </div>
+                </li>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    </ul>
+
+    <!-- Dil seçimi (mobil overlay içinde) -->
+    <div class="px-4 py-3 border-top" style="border-color:rgba(255,255,255,.08)!important; flex-shrink:0;">
+        <p class="small text-secondary mb-2 text-uppercase fw-semibold" style="font-size:.7rem;">Dil / Language</p>
+        <div class="d-flex gap-2 flex-wrap">
+            <?php foreach (SUPPORTED_LANGS as $_ml): ?>
+                <a href="<?= e(lang_switch_url($_ml)) ?>"
+                   class="btn btn-sm <?= $_ml === CURRENT_LANG ? 'btn-primary' : 'btn-outline-secondary' ?>"
+                   style="font-size:.8rem;"
+                   onclick="document.cookie='fx_lang=<?= $_ml ?>;path=/;max-age=31536000';">
+                    <?= strtoupper($_ml) ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div><!-- /fx-mobile-overlay -->
+
+<script>
+// Mobil menü aç/kapat
+function openMobileMenu() {
+    var overlay = document.getElementById('fxMobileOverlay');
+    var burger  = document.getElementById('fxBurger');
+    if (!overlay) return;
+    overlay.classList.add('fx-mob-open');
+    overlay.setAttribute('aria-hidden', 'false');
+    if (burger) burger.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+}
+function closeMobileMenu() {
+    var overlay = document.getElementById('fxMobileOverlay');
+    var burger  = document.getElementById('fxBurger');
+    if (!overlay) return;
+    overlay.classList.remove('fx-mob-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    if (burger) burger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+}
+(function () {
+    var burger = document.getElementById('fxBurger');
+    var close  = document.getElementById('fxMobileClose');
+    if (burger) burger.addEventListener('click', openMobileMenu);
+    if (close)  close.addEventListener('click', closeMobileMenu);
+
+    // Alt menü + butonu
+    document.querySelectorAll('.fx-mob-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var item = this.closest('.fx-mob-has-children');
+            var icon = this.querySelector('i');
+            var expanded = item.classList.toggle('fx-mob-expanded');
+            if (icon) {
+                icon.className = expanded ? 'bi bi-dash-lg' : 'bi bi-plus-lg';
+            }
+        });
+    });
+
+    // ESC ile kapat
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeMobileMenu();
+    });
+}());
+
+// Dil seçici dropdown (desktop)
+(function () {
+    var dd  = document.getElementById('fxLangDropdown');
+    var btn = document.getElementById('fxLangBtn');
+    if (!dd || !btn) return;
+    btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = dd.classList.toggle('fx-lang-open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.addEventListener('click', function () {
+        dd.classList.remove('fx-lang-open');
+        btn.setAttribute('aria-expanded', 'false');
+    });
+}());
+</script>
 <main>

@@ -1,15 +1,35 @@
 <?php
 
+require_once __DIR__ . '/includes/i18n.php';
 require_once __DIR__ . '/includes/header.php';
 
 $pdo  = db();
 $slug = $_GET['slug'] ?? null;
 
 if ($slug) {
+    $article = null;
     try {
-        $stmt = $pdo->prepare('SELECT * FROM news WHERE slug = :slug AND is_active = 1 LIMIT 1');
-        $stmt->execute([':slug' => $slug]);
-        $article = $stmt->fetch();
+        // Önce çeviri tablosunda slug ara
+        $stmt = $pdo->prepare(
+            'SELECT n.* FROM news n
+             JOIN news_translations nt ON nt.news_id = n.id
+             WHERE nt.slug = :slug AND nt.language = :lang AND n.is_active = 1 LIMIT 1'
+        );
+        $stmt->execute([':slug' => $slug, ':lang' => CURRENT_LANG]);
+        $article = $stmt->fetch() ?: null;
+        if (!$article) {
+            $stmt2 = $pdo->prepare('SELECT * FROM news WHERE slug = :slug AND is_active = 1 LIMIT 1');
+            $stmt2->execute([':slug' => $slug]);
+            $article = $stmt2->fetch() ?: null;
+        }
+        if ($article) {
+            $newsTr = get_translation('news_translations', 'news_id', (int)$article['id']);
+            if ($newsTr) {
+                $article['title']   = $newsTr['title']   ?: $article['title'];
+                $article['summary'] = $newsTr['summary'] ?? $article['summary'];
+                $article['content'] = $newsTr['content'] ?? $article['content'];
+            }
+        }
     } catch (Throwable $e) {
         error_log('[flexion] news article query failed: ' . $e->getMessage());
         $article = null;

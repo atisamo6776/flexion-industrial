@@ -2,10 +2,13 @@
 // ════════════════════════════════════════════════════════════════════
 //  FORM İŞLEME — HTML output'tan ÖNCE (PRG pattern: 500 + double-submit engeli)
 // ════════════════════════════════════════════════════════════════════
+require_once __DIR__ . '/includes/i18n.php';
 require_once __DIR__ . '/includes/functions.php';
 
-$pdo       = db();
-$productId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$pdo         = db();
+$productId   = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$productSlug = $_GET['slug'] ?? '';
+$catSlug     = $_GET['cat_slug'] ?? '';
 
 // GET ile gelen başarı bayrağı (PRG redirect sonrası)
 $inquirySent  = isset($_GET['sent']) && $_GET['sent'] === '1';
@@ -69,11 +72,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['inquiry_submit'])) {
 // ════════ HTML çıktısı burada başlıyor ═══════════════════════════════════════
 require_once __DIR__ . '/includes/header.php';
 
-// ---- Ürün verisi ----
+// ---- Ürün verisi (id veya slug ile) ----
+$product = null;
 try {
-    $stmt = $pdo->prepare('SELECT p.*, c.name AS category_name FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = :id AND p.is_active = 1 LIMIT 1');
-    $stmt->execute([':id' => $productId]);
-    $product = $stmt->fetch();
+    if ($productId > 0) {
+        $stmt = $pdo->prepare('SELECT p.*, c.name AS category_name FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = :id AND p.is_active = 1 LIMIT 1');
+        $stmt->execute([':id' => $productId]);
+        $product = $stmt->fetch() ?: null;
+    } elseif ($productSlug !== '') {
+        // Çeviri tablosunda slug ara
+        $stmt = $pdo->prepare(
+            'SELECT p.*, c.name AS category_name
+             FROM products p
+             JOIN categories c ON c.id = p.category_id
+             JOIN product_translations pt ON pt.product_id = p.id
+             WHERE pt.slug = :slug AND pt.language = :lang AND p.is_active = 1 LIMIT 1'
+        );
+        $stmt->execute([':slug' => $productSlug, ':lang' => CURRENT_LANG]);
+        $product = $stmt->fetch() ?: null;
+        if (!$product) {
+            $stmt2 = $pdo->prepare('SELECT p.*, c.name AS category_name FROM products p JOIN categories c ON c.id = p.category_id WHERE p.slug = :slug AND p.is_active = 1 LIMIT 1');
+            $stmt2->execute([':slug' => $productSlug]);
+            $product = $stmt2->fetch() ?: null;
+        }
+    }
+    if ($product) {
+        $productId = (int) $product['id'];
+        // Çeviriyi uygula
+        $prodTr = get_translation('product_translations', 'product_id', $productId);
+        if ($prodTr) {
+            $product['name']              = $prodTr['name'] ?: $product['name'];
+            $product['short_description'] = $prodTr['short_description'] ?? $product['short_description'];
+            $product['description']       = $prodTr['description'] ?? $product['description'];
+        }
+        // Kategori adını çevir
+        $catTr = get_translation('category_translations', 'category_id', (int)$product['category_id']);
+        if ($catTr && $catTr['name']) $product['category_name'] = $catTr['name'];
+    }
 } catch (Throwable $e) {
     error_log('[flexion] product query failed: ' . $e->getMessage());
     $product = null;

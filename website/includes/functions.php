@@ -350,3 +350,87 @@ function render_news_banner(): void
     <?php
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  i18n Yardımcıları
+// ════════════════════════════════════════════════════════════════════
+
+/**
+ * Türkçe/özel karakterleri içeren metinden URL dostu slug üretir.
+ */
+function make_slug(string $text): string
+{
+    $map = [
+        'ş'=>'s','Ş'=>'s','ı'=>'i','İ'=>'i','ğ'=>'g','Ğ'=>'g',
+        'ü'=>'u','Ü'=>'u','ö'=>'o','Ö'=>'o','ç'=>'c','Ç'=>'c',
+        'ä'=>'ae','Ä'=>'ae','ö'=>'o','ü'=>'u','ß'=>'ss',
+        'à'=>'a','á'=>'a','â'=>'a','ã'=>'a','å'=>'a',
+        'è'=>'e','é'=>'e','ê'=>'e','ë'=>'e',
+        'ì'=>'i','í'=>'i','î'=>'i','ï'=>'i',
+        'ò'=>'o','ó'=>'o','ô'=>'o','õ'=>'o',
+        'ù'=>'u','ú'=>'u','û'=>'u',
+        'ý'=>'y','ñ'=>'n',
+    ];
+    $text = strtr($text, $map);
+    $text = mb_strtolower($text, 'UTF-8');
+    $text = preg_replace('/[^a-z0-9]+/', '-', $text);
+    return trim($text, '-') ?: bin2hex(random_bytes(4));
+}
+
+/**
+ * Çeviri tablosundan belirli bir kayıt için istenen dil çevirisini getirir.
+ * Bulunamazsa varsayılan dil (en) kaydına geri döner.
+ *
+ * @param string $table   Çeviri tablosu adı (örn. 'product_translations')
+ * @param string $fkCol   Foreign key kolon adı (örn. 'product_id')
+ * @param int    $id      Kayıt ID'si
+ * @param string $lang    İstenen dil kodu (örn. 'de')
+ * @return array          Çeviri satırı (boş dizi döner bulunamazsa)
+ */
+function get_translation(string $table, string $fkCol, int $id, string $lang = ''): array
+{
+    if (!defined('CURRENT_LANG')) return [];
+    $lang = $lang ?: CURRENT_LANG;
+    try {
+        $pdo  = db();
+        $stmt = $pdo->prepare("SELECT * FROM `{$table}` WHERE `{$fkCol}` = ? AND `language` = ? LIMIT 1");
+        $stmt->execute([$id, $lang]);
+        $row = $stmt->fetch();
+        if ($row) return $row;
+
+        // Fallback to English
+        if ($lang !== 'en') {
+            $stmt->execute([$id, 'en']);
+            $row = $stmt->fetch();
+            if ($row) return $row;
+        }
+    } catch (Throwable $e) {
+        error_log('get_translation error: ' . $e->getMessage());
+    }
+    return [];
+}
+
+/**
+ * Çeviriyi kaydeder veya günceller (UPSERT).
+ *
+ * @param string $table    Çeviri tablosu adı
+ * @param string $fkCol    Foreign key kolon adı
+ * @param int    $id       Kayıt ID'si
+ * @param string $lang     Dil kodu
+ * @param array  $fields   Kolon => değer eşlemeleri
+ */
+function save_translation(string $table, string $fkCol, int $id, string $lang, array $fields): void
+{
+    try {
+        $pdo = db();
+        $fields[$fkCol] = $id;
+        $fields['language'] = $lang;
+        $cols   = implode(', ', array_map(fn($c) => "`{$c}`", array_keys($fields)));
+        $ph     = implode(', ', array_map(fn($c) => ":{$c}", array_keys($fields)));
+        $update = implode(', ', array_map(fn($c) => "`{$c}` = :{$c}", array_keys($fields)));
+        $pdo->prepare("INSERT INTO `{$table}` ({$cols}) VALUES ({$ph}) ON DUPLICATE KEY UPDATE {$update}")
+            ->execute($fields);
+    } catch (Throwable $e) {
+        error_log('save_translation error: ' . $e->getMessage());
+    }
+}
+

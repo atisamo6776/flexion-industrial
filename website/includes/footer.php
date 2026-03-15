@@ -140,6 +140,15 @@ foreach ($footerLinksRaw as $fl) {
         var menu = el.querySelector('.dropdown-menu');
         var timer = null;
 
+        // Desktop'ta dropdown toggle'a tıklanınca href'e git (hover zaten menüyü açıyor)
+        toggle.addEventListener('click', function(e) {
+            var href = this.getAttribute('href');
+            if (href && href !== '#') {
+                e.stopImmediatePropagation();
+                window.location.href = href;
+            }
+        }, true); // capture phase — Bootstrap'ten önce yakala
+
         function openDD()  { clearTimeout(timer); dd.show(); }
         function closeDD() {
             clearTimeout(timer);
@@ -179,6 +188,34 @@ foreach ($footerLinksRaw as $fl) {
         if (!el.dataset.delay) el.dataset.delay = Math.min(i * 60, maxDelay);
         io.observe(el);
     });
+}());
+</script>
+<!-- ========== Çerez Onay Banner'ı ========== -->
+<div id="fx-cookie-banner" class="fx-cookie-banner" role="dialog" aria-label="Çerez bildirimi" aria-live="polite">
+    <div class="fx-cookie-inner">
+        <p class="fx-cookie-text small mb-0">
+            Bu web sitesi en iyi deneyimi sunmak için çerezler kullanmaktadır.
+            Devam ederek <a href="/page/privacy-policy" class="fw-semibold text-white">Gizlilik Politikası</a>'mızı kabul etmiş olursunuz.
+        </p>
+        <div class="fx-cookie-actions">
+            <button id="fx-cookie-accept" class="btn btn-sm btn-light fw-semibold px-3">Kabul Et</button>
+            <button id="fx-cookie-reject" class="btn btn-sm btn-outline-light px-3">Reddet</button>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var banner = document.getElementById('fx-cookie-banner');
+    if (!banner) return;
+    if (localStorage.getItem('fx_cookie_consent') !== null) return;
+    setTimeout(function () { banner.classList.add('fx-cookie-show'); }, 800);
+    function dismiss(accept) {
+        localStorage.setItem('fx_cookie_consent', accept ? '1' : '0');
+        banner.classList.remove('fx-cookie-show');
+        setTimeout(function () { banner.style.display = 'none'; }, 350);
+    }
+    document.getElementById('fx-cookie-accept').addEventListener('click', function () { dismiss(true); });
+    document.getElementById('fx-cookie-reject').addEventListener('click', function () { dismiss(false); });
 }());
 </script>
 </body>

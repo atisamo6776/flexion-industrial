@@ -1,20 +1,50 @@
 <?php
 
+require_once __DIR__ . '/includes/i18n.php';
 require_once __DIR__ . '/includes/header.php';
 
 $pdo = db();
 
-$categoryId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-$sort       = $_GET['sort'] ?? 'relevance';
+$categoryId   = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$categorySlug = $_GET['slug'] ?? '';
+$sort         = $_GET['sort'] ?? 'relevance';
 
 if (!in_array($sort, ['relevance', 'az', 'za'], true)) {
     $sort = 'relevance';
 }
 
+$category = null;
 try {
-    $stmt = $pdo->prepare('SELECT * FROM categories WHERE id = :id AND is_active = 1 LIMIT 1');
-    $stmt->execute([':id' => $categoryId]);
-    $category = $stmt->fetch();
+    if ($categoryId > 0) {
+        $stmt = $pdo->prepare('SELECT * FROM categories WHERE id = :id AND is_active = 1 LIMIT 1');
+        $stmt->execute([':id' => $categoryId]);
+        $category = $stmt->fetch() ?: null;
+    } elseif ($categorySlug !== '') {
+        // Önce çeviri tablosunda slug ara
+        $stmt = $pdo->prepare(
+            'SELECT c.* FROM categories c
+             JOIN category_translations ct ON ct.category_id = c.id
+             WHERE ct.slug = :slug AND ct.language = :lang AND c.is_active = 1 LIMIT 1'
+        );
+        $stmt->execute([':slug' => $categorySlug, ':lang' => CURRENT_LANG]);
+        $category = $stmt->fetch() ?: null;
+        if (!$category) {
+            // Ana tabloda dene
+            $stmt2 = $pdo->prepare('SELECT * FROM categories WHERE slug = :slug AND is_active = 1 LIMIT 1');
+            $stmt2->execute([':slug' => $categorySlug]);
+            $category = $stmt2->fetch() ?: null;
+        }
+    }
+    if ($category) {
+        $categoryId = (int) $category['id'];
+        // Çeviriyi uygula
+        $catTr = get_translation('category_translations', 'category_id', $categoryId);
+        if ($catTr) {
+            $category['name']              = $catTr['name'] ?: $category['name'];
+            $category['short_description'] = $catTr['short_description'] ?? $category['short_description'];
+            $category['description']       = $catTr['description'] ?? $category['description'];
+        }
+    }
 } catch (Throwable $e) {
     error_log('[flexion] category query failed: ' . $e->getMessage());
     $category = null;

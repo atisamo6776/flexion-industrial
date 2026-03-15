@@ -121,6 +121,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // ---- Ürün Çevirisi Kaydet ----
+        elseif (isset($_POST['save_product_translation'])) {
+            require_once __DIR__ . '/../includes/functions.php';
+            $pid  = (int) ($_POST['product_id'] ?? 0);
+            $lang = trim($_POST['trans_lang'] ?? '');
+            if ($pid > 0 && in_array($lang, ['en','de','it','fr'], true)) {
+                $name  = trim($_POST['trans_name'] ?? '');
+                $slug  = make_slug($name ?: trim($_POST['trans_slug'] ?? ''));
+                if (!$slug) $slug = 'product-' . $pid . '-' . $lang;
+                save_translation('product_translations', 'product_id', $pid, $lang, [
+                    'name'              => $name,
+                    'slug'              => $slug,
+                    'short_description' => trim($_POST['trans_short'] ?? '') ?: null,
+                    'description'       => trim($_POST['trans_desc']  ?? '') ?: null,
+                ]);
+                $success = strtoupper($lang) . ' çevirisi kaydedildi.';
+            }
+        }
+
         // ---- Ürün sil ----
         elseif (isset($_POST['delete_product'])) {
             $id = (int) ($_POST['id'] ?? 0);
@@ -369,8 +388,21 @@ if ($editId) {
         } catch (Throwable $e) {
             $productDocs = [];
         }
+
+        // Mevcut çevirileri yükle
+        try {
+            $stmtTr = $pdo->prepare('SELECT * FROM product_translations WHERE product_id = ?');
+            $stmtTr->execute([$editId]);
+            $prodTranslations = [];
+            foreach ($stmtTr->fetchAll() as $tr) {
+                $prodTranslations[$tr['language']] = $tr;
+            }
+        } catch (Throwable $e) {
+            $prodTranslations = [];
+        }
     }
 }
+$prodTranslations = $prodTranslations ?? [];
 
 // Filtre & arama
 $filterCat    = isset($_GET['cat'])    ? (int)$_GET['cat']        : 0;
@@ -581,6 +613,75 @@ include __DIR__ . '/partials_header.php';
 </div>
 
 <?php if (isset($editProduct) && $editProduct): ?>
+<!-- Çeviri Yönetimi -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <i class="bi bi-translate text-primary"></i>
+                <strong>İçerik Çevirileri</strong>
+                <small class="text-muted ms-2">— EN (varsayılan), DE, IT, FR</small>
+            </div>
+            <div class="card-body">
+                <!-- Dil sekmeleri -->
+                <ul class="nav nav-tabs mb-3" id="transLangTabs">
+                    <?php foreach (['en','de','it','fr'] as $_tl): ?>
+                        <li class="nav-item">
+                            <button class="nav-link <?= $_tl === 'en' ? 'active' : '' ?>"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#ptrans-<?= $_tl ?>"
+                                    type="button">
+                                <?= strtoupper($_tl) ?>
+                                <?php if (!empty($prodTranslations[$_tl])): ?>
+                                    <span class="badge bg-success ms-1" style="font-size:.6rem;">✓</span>
+                                <?php endif; ?>
+                            </button>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <div class="tab-content">
+                    <?php foreach (['en','de','it','fr'] as $_tl): ?>
+                        <?php $_tr = $prodTranslations[$_tl] ?? []; ?>
+                        <div class="tab-pane <?= $_tl === 'en' ? 'show active' : '' ?>" id="ptrans-<?= $_tl ?>">
+                            <form method="post">
+                                <input type="hidden" name="csrf_token"           value="<?= e($token) ?>">
+                                <input type="hidden" name="save_product_translation" value="1">
+                                <input type="hidden" name="product_id"           value="<?= e((string) $editProduct['id']) ?>">
+                                <input type="hidden" name="trans_lang"           value="<?= e($_tl) ?>">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Ürün Adı (<?= strtoupper($_tl) ?>)</label>
+                                        <input type="text" name="trans_name" class="form-control form-control-sm"
+                                               value="<?= e($_tr['name'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Slug</label>
+                                        <input type="text" name="trans_slug" class="form-control form-control-sm"
+                                               value="<?= e($_tr['slug'] ?? '') ?>" placeholder="Boş bırakılırsa addan otomatik üretilir">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold">Kısa Açıklama</label>
+                                        <textarea name="trans_short" class="form-control form-control-sm" rows="2"><?= e($_tr['short_description'] ?? '') ?></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold">Uzun Açıklama</label>
+                                        <textarea name="trans_desc" class="form-control form-control-sm" rows="4"><?= e($_tr['description'] ?? '') ?></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <?= strtoupper($_tl) ?> Çevirisini Kaydet
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <!-- Teknik Spec Tabloları -->
     <div class="col-lg-6">

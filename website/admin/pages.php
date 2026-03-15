@@ -119,6 +119,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Sayfa silinemedi.';
                 }
             }
+        } elseif (isset($_POST['save_page_translation'])) {
+            require_once __DIR__ . '/../includes/functions.php';
+            $pgid = (int) ($_POST['page_id'] ?? 0);
+            $lang = trim($_POST['trans_lang'] ?? '');
+            if ($pgid > 0 && in_array($lang, ['en','de','it','fr'], true)) {
+                $pgTitle = trim($_POST['trans_title'] ?? '');
+                $pgSlug  = make_slug($pgTitle ?: trim($_POST['trans_slug'] ?? ''));
+                if (!$pgSlug) $pgSlug = 'page-' . $pgid . '-' . $lang;
+                save_translation('page_translations', 'page_id', $pgid, $lang, [
+                    'slug'             => $pgSlug,
+                    'title'            => $pgTitle,
+                    'content'          => trim($_POST['trans_content'] ?? '') ?: null,
+                    'meta_description' => trim($_POST['trans_meta'] ?? '') ?: null,
+                    'banner_title'     => trim($_POST['trans_banner_title'] ?? '') ?: null,
+                ]);
+                $success = strtoupper($lang) . ' çevirisi kaydedildi.';
+            }
         } elseif (isset($_POST['save_order'])) {
             $ids  = $_POST['order'] ?? [];
             $i    = 1;
@@ -144,12 +161,24 @@ try {
 }
 $token = csrf_token();
 
-$editId   = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
-$editPage = null;
+$editId           = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
+$editPage         = null;
+$pageTranslations = [];
 foreach ($pages as $p) {
     if ((int) $p['id'] === $editId) {
         $editPage = $p;
         break;
+    }
+}
+if ($editPage) {
+    try {
+        $stmtPTr = $pdo->prepare('SELECT * FROM page_translations WHERE page_id = ?');
+        $stmtPTr->execute([$editId]);
+        foreach ($stmtPTr->fetchAll() as $tr) {
+            $pageTranslations[$tr['language']] = $tr;
+        }
+    } catch (Throwable $e) {
+        $pageTranslations = [];
     }
 }
 
@@ -332,6 +361,79 @@ include __DIR__ . '/partials_header.php';
         </div>
     </div>
 </div>
+
+<?php if ($editPage): ?>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <i class="bi bi-translate text-primary"></i>
+                <strong>Sayfa Çevirileri</strong>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-3">
+                    <?php foreach (['en','de','it','fr'] as $_ptl): ?>
+                        <li class="nav-item">
+                            <button class="nav-link <?= $_ptl === 'en' ? 'active' : '' ?>"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#pgtrans-<?= $_ptl ?>"
+                                    type="button">
+                                <?= strtoupper($_ptl) ?>
+                                <?php if (!empty($pageTranslations[$_ptl])): ?>
+                                    <span class="badge bg-success ms-1" style="font-size:.6rem;">✓</span>
+                                <?php endif; ?>
+                            </button>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <div class="tab-content">
+                    <?php foreach (['en','de','it','fr'] as $_ptl): ?>
+                        <?php $_ptr = $pageTranslations[$_ptl] ?? []; ?>
+                        <div class="tab-pane <?= $_ptl === 'en' ? 'show active' : '' ?>" id="pgtrans-<?= $_ptl ?>">
+                            <form method="post">
+                                <input type="hidden" name="csrf_token"             value="<?= e($token) ?>">
+                                <input type="hidden" name="save_page_translation"  value="1">
+                                <input type="hidden" name="page_id"                value="<?= e((string) $editPage['id']) ?>">
+                                <input type="hidden" name="trans_lang"             value="<?= e($_ptl) ?>">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Sayfa Başlığı (<?= strtoupper($_ptl) ?>)</label>
+                                        <input type="text" name="trans_title" class="form-control form-control-sm"
+                                               value="<?= e($_ptr['title'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-semibold">Slug</label>
+                                        <input type="text" name="trans_slug" class="form-control form-control-sm"
+                                               value="<?= e($_ptr['slug'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-semibold">Banner Başlığı</label>
+                                        <input type="text" name="trans_banner_title" class="form-control form-control-sm"
+                                               value="<?= e($_ptr['banner_title'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold">Meta Açıklama</label>
+                                        <textarea name="trans_meta" class="form-control form-control-sm" rows="2"><?= e($_ptr['meta_description'] ?? '') ?></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold">İçerik</label>
+                                        <textarea name="trans_content" class="form-control form-control-sm" rows="5"><?= e($_ptr['content'] ?? '') ?></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <?= strtoupper($_ptl) ?> Çevirisini Kaydet
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php include __DIR__ . '/partials_footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>

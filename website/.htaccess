@@ -8,16 +8,56 @@ Options -Indexes
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # 2. .php uzantısız talep → karşılık gelen .php dosyası varsa yönlendir
-    #    Örnek: /sectors → sectors.php, /category?id=1 → category.php?id=1
+    # ===================================================================
+    #  2. Admin / includes / assets → olduğu gibi geç
+    # ===================================================================
+    RewriteRule ^admin/  - [L]
+    RewriteRule ^includes/ - [L]
+    RewriteRule ^assets/ - [L]
+
+    # ===================================================================
+    #  3. Eski ?id= tabanlı URL'leri 301 ile slug'lı URL'ye yönlendir
+    # ===================================================================
+    # category.php?id=N  →  /router.php?_route=old-cat&id=N
+    RewriteCond %{QUERY_STRING} ^id=([0-9]+)$
+    RewriteRule ^category\.php$ /router.php?_route=old-cat&id=%1 [R=301,L]
+
+    # product.php?id=N  →  /router.php?_route=old-prod&id=N
+    RewriteCond %{QUERY_STRING} ^id=([0-9]+)$
+    RewriteRule ^product\.php$ /router.php?_route=old-prod&id=%1 [R=301,L]
+
+    # news.php?id=N  →  /router.php?_route=old-news&id=N
+    RewriteCond %{QUERY_STRING} ^id=([0-9]+)$
+    RewriteRule ^news\.php$ /router.php?_route=old-news&id=%1 [R=301,L]
+
+    # ===================================================================
+    #  4. .php uzantısız talep → karşılık gelen .php dosyası varsa geç
+    # ===================================================================
     RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}.php -f
     RewriteRule ^(.+?)/?$ $1.php [L,QSA]
 
-    # 3. Kurumsal sayfa slug'ları (admin / includes / assets hariç)
-    RewriteCond %{REQUEST_URI} !^/admin/
-    RewriteCond %{REQUEST_URI} !^/includes/
-    RewriteCond %{REQUEST_URI} !^/assets/
-    RewriteRule ^([a-z0-9][a-z0-9\-]*)/?$ page.php?slug=$1 [L,QSA]
+    # ===================================================================
+    #  5. Dil prefix'li URL'ler: /de/... /fr/... /it/...
+    #     Router'a ilet; dil kodu $_GET['lang'] olarak geçilir.
+    # ===================================================================
+
+    # /de/haberler/haber-slug → news slug
+    RewriteRule ^(de|fr|it)/haberler/([a-z0-9][a-z0-9\-\._%]*)/?$ news.php?slug=$2&lang=$1 [L,QSA]
+    RewriteRule ^haberler/([a-z0-9][a-z0-9\-\._%]*)/?$ news.php?slug=$1 [L,QSA]
+
+    # /de/haberler  →  news listeleme
+    RewriteRule ^(de|fr|it)/haberler/?$ news.php?lang=$1 [L,QSA]
+    RewriteRule ^haberler/?$ news.php [L,QSA]
+
+    # /de/cat-slug/prod-slug → product.php
+    RewriteRule ^(de|fr|it)/([a-z0-9][a-z0-9\-\._%]*)/([a-z0-9][a-z0-9\-\._%]*)/?$ product.php?cat_slug=$2&slug=$3&lang=$1 [L,QSA]
+    RewriteRule ^([a-z0-9][a-z0-9\-\._%]*)/([a-z0-9][a-z0-9\-\._%]*)/?$ product.php?cat_slug=$1&slug=$2 [L,QSA]
+
+    # /de/cat-slug → category.php
+    RewriteRule ^(de|fr|it)/([a-z0-9][a-z0-9\-\._%]*)/?$ router.php?_route=cat-or-page&slug=$2&lang=$1 [L,QSA]
+
+    # /cat-or-page-slug (EN default, tek segment)
+    RewriteRule ^([a-z0-9][a-z0-9\-\._%]*)/?$ router.php?_route=cat-or-page&slug=$1 [L,QSA]
 </IfModule>
 
 # ---- Güvenlik başlıkları ----

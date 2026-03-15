@@ -2,6 +2,7 @@
 // ════════════════════════════════════════════════════════════════════
 //  FORM İŞLEME — HTML output'tan ÖNCE (PRG pattern)
 // ════════════════════════════════════════════════════════════════════
+require_once __DIR__ . '/includes/i18n.php';
 require_once __DIR__ . '/includes/functions.php';
 
 $pdo = db();
@@ -20,9 +21,28 @@ if (!$slug) {
 $page = null;
 if ($slug) {
     try {
-        $stmt = $pdo->prepare('SELECT * FROM pages WHERE slug = :slug AND is_active = 1 LIMIT 1');
-        $stmt->execute([':slug' => $slug]);
-        $page = $stmt->fetch();
+        // Çeviri tablosunda slug ara
+        $stmtTr = $pdo->prepare(
+            'SELECT p.* FROM pages p
+             JOIN page_translations pt ON pt.page_id = p.id
+             WHERE pt.slug = :slug AND pt.language = :lang AND p.is_active = 1 LIMIT 1'
+        );
+        $stmtTr->execute([':slug' => $slug, ':lang' => CURRENT_LANG]);
+        $page = $stmtTr->fetch() ?: null;
+        if (!$page) {
+            $stmt = $pdo->prepare('SELECT * FROM pages WHERE slug = :slug AND is_active = 1 LIMIT 1');
+            $stmt->execute([':slug' => $slug]);
+            $page = $stmt->fetch() ?: null;
+        }
+        if ($page) {
+            $pageTr = get_translation('page_translations', 'page_id', (int)$page['id']);
+            if ($pageTr) {
+                $page['title']            = $pageTr['title']            ?: $page['title'];
+                $page['content']          = $pageTr['content']          ?? $page['content'];
+                $page['meta_description'] = $pageTr['meta_description'] ?? $page['meta_description'];
+                $page['banner_title']     = $pageTr['banner_title']     ?? $page['banner_title'];
+            }
+        }
     } catch (Throwable $e) {
         $page = null;
     }

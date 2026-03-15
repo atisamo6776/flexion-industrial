@@ -95,6 +95,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Kategori silinemedi.';
                 }
             }
+        } elseif (isset($_POST['save_category_translation'])) {
+            require_once __DIR__ . '/../includes/functions.php';
+            $cid  = (int) ($_POST['category_id'] ?? 0);
+            $lang = trim($_POST['trans_lang'] ?? '');
+            if ($cid > 0 && in_array($lang, ['en','de','it','fr'], true)) {
+                $name = trim($_POST['trans_name'] ?? '');
+                $slug = make_slug($name ?: trim($_POST['trans_slug'] ?? ''));
+                if (!$slug) $slug = 'cat-' . $cid . '-' . $lang;
+                save_translation('category_translations', 'category_id', $cid, $lang, [
+                    'name'              => $name,
+                    'slug'              => $slug,
+                    'short_description' => trim($_POST['trans_short'] ?? '') ?: null,
+                    'description'       => trim($_POST['trans_desc']  ?? '') ?: null,
+                ]);
+                $success = strtoupper($lang) . ' çevirisi kaydedildi.';
+            }
         } elseif (isset($_POST['save_order'])) {
             $order = $_POST['order'] ?? [];
             $i     = 1;
@@ -181,11 +197,23 @@ include __DIR__ . '/partials_header.php';
         <?php
         $editId  = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
         $editCat = null;
+        $catTranslations = [];
         if ($editId) {
             foreach ($categories as $cat) {
                 if ((int) $cat['id'] === $editId) {
                     $editCat = $cat;
                     break;
+                }
+            }
+            if ($editCat) {
+                try {
+                    $stmtCTr = $pdo->prepare('SELECT * FROM category_translations WHERE category_id = ?');
+                    $stmtCTr->execute([$editId]);
+                    foreach ($stmtCTr->fetchAll() as $tr) {
+                        $catTranslations[$tr['language']] = $tr;
+                    }
+                } catch (Throwable $e) {
+                    $catTranslations = [];
                 }
             }
         }
@@ -255,6 +283,76 @@ include __DIR__ . '/partials_header.php';
         </div>
     </div>
 </div>
+
+<?php if ($editCat): ?>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <i class="bi bi-translate text-primary"></i>
+                <strong>İçerik Çevirileri</strong>
+                <small class="text-muted ms-2">— EN, DE, IT, FR</small>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-3">
+                    <?php foreach (['en','de','it','fr'] as $_ctl): ?>
+                        <li class="nav-item">
+                            <button class="nav-link <?= $_ctl === 'en' ? 'active' : '' ?>"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#ctrans-<?= $_ctl ?>"
+                                    type="button">
+                                <?= strtoupper($_ctl) ?>
+                                <?php if (!empty($catTranslations[$_ctl])): ?>
+                                    <span class="badge bg-success ms-1" style="font-size:.6rem;">✓</span>
+                                <?php endif; ?>
+                            </button>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <div class="tab-content">
+                    <?php foreach (['en','de','it','fr'] as $_ctl): ?>
+                        <?php $_ctr = $catTranslations[$_ctl] ?? []; ?>
+                        <div class="tab-pane <?= $_ctl === 'en' ? 'show active' : '' ?>" id="ctrans-<?= $_ctl ?>">
+                            <form method="post">
+                                <input type="hidden" name="csrf_token"                    value="<?= e($token) ?>">
+                                <input type="hidden" name="save_category_translation"     value="1">
+                                <input type="hidden" name="category_id"                   value="<?= e((string) $editCat['id']) ?>">
+                                <input type="hidden" name="trans_lang"                    value="<?= e($_ctl) ?>">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Kategori Adı (<?= strtoupper($_ctl) ?>)</label>
+                                        <input type="text" name="trans_name" class="form-control form-control-sm"
+                                               value="<?= e($_ctr['name'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Slug</label>
+                                        <input type="text" name="trans_slug" class="form-control form-control-sm"
+                                               value="<?= e($_ctr['slug'] ?? '') ?>" placeholder="Boş bırakılırsa addan üretilir">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold">Kısa Açıklama</label>
+                                        <input type="text" name="trans_short" class="form-control form-control-sm"
+                                               value="<?= e($_ctr['short_description'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold">Uzun Açıklama</label>
+                                        <textarea name="trans_desc" class="form-control form-control-sm" rows="3"><?= e($_ctr['description'] ?? '') ?></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <?= strtoupper($_ctl) ?> Çevirisini Kaydet
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php include __DIR__ . '/partials_footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>

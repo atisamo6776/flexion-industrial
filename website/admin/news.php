@@ -84,6 +84,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Haber kaydedilemedi. Lütfen <a href="migrate.php">migrasyonu</a> kontrol edin.';
                 }
             }
+        } elseif (isset($_POST['save_news_translation'])) {
+            require_once __DIR__ . '/../includes/functions.php';
+            $nid  = (int) ($_POST['news_id'] ?? 0);
+            $lang = trim($_POST['trans_lang'] ?? '');
+            if ($nid > 0 && in_array($lang, ['en','de','it','fr'], true)) {
+                $title = trim($_POST['trans_title'] ?? '');
+                $slug  = make_slug($title ?: trim($_POST['trans_slug'] ?? ''));
+                if (!$slug) $slug = 'news-' . $nid . '-' . $lang;
+                save_translation('news_translations', 'news_id', $nid, $lang, [
+                    'title'   => $title,
+                    'slug'    => $slug,
+                    'summary' => trim($_POST['trans_summary'] ?? '') ?: null,
+                    'content' => trim($_POST['trans_content'] ?? '') ?: null,
+                ]);
+                $success = strtoupper($lang) . ' çevirisi kaydedildi.';
+            }
         } elseif (isset($_POST['delete_news'])) {
             $id = (int) ($_POST['id'] ?? 0);
             if ($id > 0) {
@@ -99,8 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$editId   = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
-$editNews = null;
+$editId          = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
+$editNews        = null;
+$newsTranslations = [];
 if ($editId) {
     try {
         $stmt = $pdo->prepare('SELECT * FROM news WHERE id = ?');
@@ -109,6 +126,17 @@ if ($editId) {
     } catch (Throwable $e) {
         $editNews = null;
         $error = 'Haber verisi alınamadı.';
+    }
+    if ($editNews) {
+        try {
+            $stmtNTr = $pdo->prepare('SELECT * FROM news_translations WHERE news_id = ?');
+            $stmtNTr->execute([$editId]);
+            foreach ($stmtNTr->fetchAll() as $tr) {
+                $newsTranslations[$tr['language']] = $tr;
+            }
+        } catch (Throwable $e) {
+            $newsTranslations = [];
+        }
     }
 }
 
@@ -224,5 +252,73 @@ include __DIR__ . '/partials_header.php';
         </div>
     </div>
 </div>
+
+<?php if ($editNews): ?>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <i class="bi bi-translate text-primary"></i>
+                <strong>Haber Çevirileri</strong>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-3">
+                    <?php foreach (['en','de','it','fr'] as $_ntl): ?>
+                        <li class="nav-item">
+                            <button class="nav-link <?= $_ntl === 'en' ? 'active' : '' ?>"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#ntrans-<?= $_ntl ?>"
+                                    type="button">
+                                <?= strtoupper($_ntl) ?>
+                                <?php if (!empty($newsTranslations[$_ntl])): ?>
+                                    <span class="badge bg-success ms-1" style="font-size:.6rem;">✓</span>
+                                <?php endif; ?>
+                            </button>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <div class="tab-content">
+                    <?php foreach (['en','de','it','fr'] as $_ntl): ?>
+                        <?php $_ntr = $newsTranslations[$_ntl] ?? []; ?>
+                        <div class="tab-pane <?= $_ntl === 'en' ? 'show active' : '' ?>" id="ntrans-<?= $_ntl ?>">
+                            <form method="post">
+                                <input type="hidden" name="csrf_token"              value="<?= e($token) ?>">
+                                <input type="hidden" name="save_news_translation"   value="1">
+                                <input type="hidden" name="news_id"                 value="<?= e((string) $editNews['id']) ?>">
+                                <input type="hidden" name="trans_lang"              value="<?= e($_ntl) ?>">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Başlık (<?= strtoupper($_ntl) ?>)</label>
+                                        <input type="text" name="trans_title" class="form-control form-control-sm"
+                                               value="<?= e($_ntr['title'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Slug</label>
+                                        <input type="text" name="trans_slug" class="form-control form-control-sm"
+                                               value="<?= e($_ntr['slug'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold">Özet</label>
+                                        <textarea name="trans_summary" class="form-control form-control-sm" rows="2"><?= e($_ntr['summary'] ?? '') ?></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold">İçerik</label>
+                                        <textarea name="trans_content" class="form-control form-control-sm" rows="5"><?= e($_ntr['content'] ?? '') ?></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <?= strtoupper($_ntl) ?> Çevirisini Kaydet
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php include __DIR__ . '/partials_footer.php'; ?>

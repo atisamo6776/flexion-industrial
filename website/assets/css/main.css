@@ -579,46 +579,95 @@ div.fx-card-img {
     border-bottom: none;
 }
 
-/* Başlık butonu */
+/*
+ * Kategori sidebar: .fx-cat-btn iki varyanta ayrıldı:
+ *   div.fx-cat-btn  → alt kategorisi olan (text link + chevron button)
+ *   a.fx-cat-btn    → alt kategorisi olmayan (tam satır link)
+ */
 .fx-cat-btn {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: stretch;
     width: 100%;
-    padding: .72rem 1rem;
     background: transparent;
     border: none;
     text-align: left;
     font-size: .88rem;
-    color: #374151 !important;
     cursor: pointer;
-    transition: color .2s, background-color .15s;
     font-family: inherit;
     text-decoration: none;
+    transition: background-color .15s;
 }
-.fx-cat-btn:hover {
+
+/* Çocuksuz varyant: tüm satır link, padding normal */
+a.fx-cat-btn {
+    padding: .72rem 1rem;
+    align-items: center;
+    color: #374151 !important;
+    transition: color .2s, background-color .15s;
+}
+a.fx-cat-btn:hover {
     color: var(--flexion-red) !important;
     background-color: #fef9f9;
 }
-
-/* Aktif / açık kategori — sadece seçili olan kırmızı */
-.fx-cat-btn.fx-cat-active {
+a.fx-cat-btn.fx-cat-active {
     color: var(--flexion-red) !important;
     font-weight: 600;
+}
+
+/* Çocuklu varyant: text alanı (link) */
+.fx-cat-btn-text {
+    flex: 1;
+    padding: .72rem 1rem;
+    font-size: .88rem;
+    color: #374151;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: color .18s, background-color .15s;
+    line-height: 1.3;
+}
+.fx-cat-btn-text:hover {
+    color: var(--flexion-red);
+    background-color: #fef9f9;
+}
+.fx-cat-btn.fx-cat-active .fx-cat-btn-text,
+.fx-cat-btn-text.fx-cat-child-active {
+    color: var(--flexion-red) !important;
+    font-weight: 600;
+}
+
+/* Çocuklu varyant: ok butonu */
+.fx-cat-chevron-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .72rem .8rem;
+    background: transparent;
+    border: none;
+    border-left: 1px solid #f0f0f0;
+    cursor: pointer;
+    color: #6b7280;
+    transition: color .18s, background-color .15s;
+    line-height: 1;
+}
+.fx-cat-chevron-btn:hover {
+    color: var(--flexion-red);
+    background-color: #fef9f9;
+}
+.fx-cat-btn.fx-cat-active .fx-cat-chevron-btn {
+    color: var(--flexion-red);
 }
 
 /* Ok ikonu */
 .fx-cat-chevron {
     font-size: .75rem;
     flex-shrink: 0;
-    margin-left: .5rem;
     transition: transform .3s ease, color .2s;
 }
-.fx-cat-btn[aria-expanded="true"] .fx-cat-chevron {
+.fx-cat-chevron-btn[aria-expanded="true"] .fx-cat-chevron {
     transform: rotate(180deg);
-}
-.fx-cat-btn.fx-cat-active .fx-cat-chevron {
-    color: var(--flexion-red);
 }
 
 /* Alt öğeler (ürün linkleri) */
@@ -642,7 +691,7 @@ div.fx-card-img {
 .fx-cat-child-link {
     padding: .32rem .75rem;
     font-size: .83rem;
-    color: #374151 !important;        /* Pasif: gri */
+    color: #374151 !important;
     text-decoration: none;
     border-radius: 3px;
     transition: background-color .15s, color .15s;
@@ -652,21 +701,9 @@ div.fx-card-img {
     background-color: #fef2f2;
     color: var(--flexion-red) !important;
 }
-/* Sadece aktif (bulunulan) kategori kırmızı */
 .fx-cat-child-link.fx-cat-child-active {
     color: var(--flexion-red) !important;
     font-weight: 600;
-}
-.fx-cat-child-link.fx-cat-all-link {
-    color: #6b7280 !important;
-    font-size: .8rem;
-    margin-top: .25rem;
-    border-top: 1px dashed #f0f0f0;
-    padding-top: .4rem;
-}
-.fx-cat-child-link.fx-cat-all-link:hover {
-    color: var(--flexion-red) !important;
-    background-color: #fef2f2;
 }
 
 /* ===================================================
@@ -759,6 +796,214 @@ div.fx-card-img {
         padding-bottom: 1rem;
     }
 }
+
+/* ===================================================
+   Çerez Onay Banner'ı
+   =================================================== */
+.fx-cookie-banner {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    max-width: 420px;
+    background: #111827;
+    color: #e5e7eb;
+    border-radius: .75rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,.35);
+    padding: 1.1rem 1.25rem;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity .3s ease, transform .3s ease;
+    pointer-events: none;
+}
+.fx-cookie-banner.fx-cookie-show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.fx-cookie-inner {
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+}
+.fx-cookie-text a { color: #fff; }
+.fx-cookie-actions {
+    display: flex;
+    gap: .5rem;
+}
+@media (max-width: 575.98px) {
+    .fx-cookie-banner {
+        left: .75rem;
+        right: .75rem;
+        bottom: .75rem;
+        max-width: none;
+        border-radius: .6rem;
+    }
+}
+
+/* ===================================================
+   Mobil Tam Ekran Menü Overlay
+   =================================================== */
+.fx-mobile-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    background: #0b1120;
+    flex-direction: column;
+    overflow-y: auto;
+    opacity: 0;
+    transform: translateX(-100%);
+    transition: opacity .25s ease, transform .25s ease;
+    will-change: transform, opacity;
+}
+.fx-mobile-overlay.fx-mob-open {
+    opacity: 1;
+    transform: translateX(0);
+}
+/* Masaüstünde asla gösterme */
+@media (min-width: 992px) {
+    .fx-mobile-overlay { display: none !important; }
+}
+@media (max-width: 991.98px) {
+    .fx-mobile-overlay { display: flex; }
+    /* Mevcut navbar-collapse'ı mobilde gizle */
+    #mainNav { display: none !important; }
+}
+
+.fx-mobile-overlay-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    flex-shrink: 0;
+}
+.fx-mobile-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: rgba(255,255,255,.07);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background .15s;
+}
+.fx-mobile-close-btn:hover { background: rgba(255,255,255,.15); }
+
+.fx-mobile-nav {
+    padding: .5rem 0 2rem;
+    flex: 1;
+}
+.fx-mob-item {
+    border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.fx-mob-item:last-child { border-bottom: none; }
+.fx-mob-item-row {
+    display: flex;
+    align-items: stretch;
+}
+.fx-mob-link {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: .9rem 1.25rem;
+    color: #e5e7eb;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: color .15s, background .15s;
+}
+.fx-mob-link:hover, .fx-mob-link:focus {
+    color: var(--flexion-red);
+    background: rgba(255,255,255,.04);
+}
+.fx-mob-toggle {
+    flex-shrink: 0;
+    width: 52px;
+    border: none;
+    border-left: 1px solid rgba(255,255,255,.06);
+    background: transparent;
+    color: #9ca3af;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color .15s, background .15s;
+}
+.fx-mob-toggle:hover { color: var(--flexion-red); background: rgba(255,255,255,.04); }
+.fx-mob-children {
+    display: none;
+    flex-direction: column;
+    background: rgba(0,0,0,.2);
+    padding: .25rem 0 .5rem;
+}
+.fx-mob-item.fx-mob-expanded .fx-mob-children { display: flex; }
+.fx-mob-item.fx-mob-expanded .fx-mob-toggle { color: var(--flexion-red); }
+.fx-mob-child-link {
+    display: block;
+    padding: .6rem 1.25rem .6rem 2rem;
+    color: #9ca3af;
+    text-decoration: none;
+    font-size: .9rem;
+    transition: color .15s;
+}
+.fx-mob-child-link:hover { color: var(--flexion-red); }
+
+/* ===================================================
+   Dil Seçici (Header)
+   =================================================== */
+.fx-lang-dropdown {
+    position: relative;
+}
+.fx-lang-btn {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .3rem .6rem;
+    border: 1px solid #e5e7eb;
+    border-radius: .4rem;
+    background: transparent;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #4b5563;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+    white-space: nowrap;
+}
+.fx-lang-btn:hover { border-color: var(--flexion-red); color: var(--flexion-red); }
+.fx-lang-btn .bi { font-size: .65rem; }
+.fx-lang-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: .5rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+    min-width: 130px;
+    padding: .3rem 0;
+    z-index: 1100;
+    display: none;
+}
+.fx-lang-dropdown.fx-lang-open .fx-lang-menu { display: block; }
+.fx-lang-menu a {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .9rem;
+    font-size: .82rem;
+    color: #374151 !important;
+    text-decoration: none;
+    transition: background .12s, color .12s;
+}
+.fx-lang-menu a:hover { background: #fef2f2; color: var(--flexion-red) !important; }
+.fx-lang-menu a.active { color: var(--flexion-red) !important; font-weight: 600; }
 
 /* Erişilebilirlik: hareket azaltma tercihi */
 @media (prefers-reduced-motion: reduce) {

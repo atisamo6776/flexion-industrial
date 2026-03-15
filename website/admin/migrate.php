@@ -182,6 +182,68 @@ $tableMigrations = [
         PRIMARY KEY (`id`),
         UNIQUE KEY `uk_username` (`username`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    // ── i18n: Çeviri tabloları ────────────────────────────────────────────────
+    'category_translations' => "CREATE TABLE `category_translations` (
+        `id`                INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+        `category_id`       INT UNSIGNED  NOT NULL,
+        `language`          VARCHAR(5)    NOT NULL DEFAULT 'en',
+        `name`              VARCHAR(200)  NOT NULL DEFAULT '',
+        `slug`              VARCHAR(200)  NOT NULL DEFAULT '',
+        `short_description` TEXT          NULL,
+        `description`       LONGTEXT      NULL,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_cat_lang` (`category_id`, `language`),
+        UNIQUE KEY `uk_cat_lang_slug` (`language`, `slug`),
+        KEY `idx_category_id` (`category_id`),
+        KEY `idx_language` (`language`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'product_translations' => "CREATE TABLE `product_translations` (
+        `id`                INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+        `product_id`        INT UNSIGNED  NOT NULL,
+        `language`          VARCHAR(5)    NOT NULL DEFAULT 'en',
+        `name`              VARCHAR(255)  NOT NULL DEFAULT '',
+        `slug`              VARCHAR(255)  NOT NULL DEFAULT '',
+        `short_description` TEXT          NULL,
+        `description`       LONGTEXT      NULL,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_prod_lang` (`product_id`, `language`),
+        UNIQUE KEY `uk_prod_lang_slug` (`language`, `slug`),
+        KEY `idx_product_id` (`product_id`),
+        KEY `idx_language` (`language`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'page_translations' => "CREATE TABLE `page_translations` (
+        `id`               INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+        `page_id`          INT UNSIGNED  NOT NULL,
+        `language`         VARCHAR(5)    NOT NULL DEFAULT 'en',
+        `slug`             VARCHAR(200)  NOT NULL DEFAULT '',
+        `title`            VARCHAR(255)  NOT NULL DEFAULT '',
+        `content`          LONGTEXT      NULL,
+        `meta_description` VARCHAR(300)  NULL,
+        `banner_title`     VARCHAR(255)  NULL,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_page_lang` (`page_id`, `language`),
+        UNIQUE KEY `uk_page_lang_slug` (`language`, `slug`),
+        KEY `idx_page_id` (`page_id`),
+        KEY `idx_language` (`language`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'news_translations' => "CREATE TABLE `news_translations` (
+        `id`       INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+        `news_id`  INT UNSIGNED  NOT NULL,
+        `language` VARCHAR(5)    NOT NULL DEFAULT 'en',
+        `slug`     VARCHAR(255)  NOT NULL DEFAULT '',
+        `title`    VARCHAR(255)  NOT NULL DEFAULT '',
+        `summary`  TEXT          NULL,
+        `content`  LONGTEXT      NULL,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_news_lang` (`news_id`, `language`),
+        UNIQUE KEY `uk_news_lang_slug` (`language`, `slug`),
+        KEY `idx_news_id` (`news_id`),
+        KEY `idx_language` (`language`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 ];
 
 $columnMigrations = [
