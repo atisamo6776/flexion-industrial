@@ -24,6 +24,42 @@ function lang_prefix(string $lang = ''): string {
     return ($l !== DEFAULT_LANG && in_array($l, SUPPORTED_LANGS, true)) ? '/' . $l : '';
 }
 
+// ── Seçili dilde ana sayfa URL'i ────────────────────────────────────────────
+// EN için '/', DE için '/de/', FR için '/fr/', IT için '/it/'
+function home_url(): string {
+    $prefix = lang_prefix();
+    return $prefix !== '' ? $prefix . '/' : '/';
+}
+
+// ── İç linki seçili dile göre prefix'le ────────────────────────────────────
+// Harici URL'ler (http/https ile başlayanlar) değişmeden döner.
+// Zaten dil prefix'i olan yollar (/de/...) değişmeden döner.
+// Boş link, '#' veya sadece '/' için olduğu gibi döner.
+// Diğer tüm iç linklere CURRENT_LANG prefix'i eklenir.
+function localized_url(string $url): string {
+    if ($url === '' || $url === '#' || $url === '/') {
+        return $url ?: '/';
+    }
+    if (preg_match('#^https?://#i', $url)) {
+        return $url;
+    }
+    $prefix = lang_prefix();
+    if ($prefix === '') {
+        return $url;
+    }
+    // Zaten bu dil prefix'i ile başlıyorsa dokunma
+    foreach (SUPPORTED_LANGS as $l) {
+        if ($l !== DEFAULT_LANG && str_starts_with($url, '/' . $l . '/')) {
+            return $url;
+        }
+        if ($l !== DEFAULT_LANG && $url === '/' . $l) {
+            return $url;
+        }
+    }
+    $path = ltrim($url, '/');
+    return $prefix . '/' . $path;
+}
+
 // ── Dil değiştirilince mevcut sayfa URL'ini üretir ──────────────────────────
 function lang_switch_url(string $lang): string {
     $uri  = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';

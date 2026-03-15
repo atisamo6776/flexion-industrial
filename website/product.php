@@ -194,7 +194,7 @@ try {
         <!-- Breadcrumb -->
         <nav class="mb-4" aria-label="breadcrumb">
             <ol class="breadcrumb small">
-                <li class="breadcrumb-item"><a href="/"><?= e(t('nav_home', 'Home')) ?></a></li>
+                <li class="breadcrumb-item"><a href="<?= e(home_url()) ?>"><?= e(t('nav_home', 'Home')) ?></a></li>
                 <li class="breadcrumb-item"><a href="sectors"><?= e(t('nav_products', 'Products')) ?></a></li>
                 <li class="breadcrumb-item">
                     <a href="category?id=<?= e((string)$product['category_id']) ?>"><?= e($product['category_name']) ?></a>

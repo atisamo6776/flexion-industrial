@@ -61,7 +61,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg bg-white border-bottom fx-sticky-nav">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="/">
+        <a class="navbar-brand d-flex align-items-center" href="<?= e(home_url()) ?>">
             <?php if ($logoPath): ?>
                 <img src="<?= e(asset_url($logoPath)) ?>" alt="<?= e($siteTitle) ?>" height="<?= $logoHeight ?>" class="me-2">
             <?php endif; ?>
@@ -92,7 +92,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
                     <?php if (!empty($item['children'])): ?>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle<?= $isActive ? ' active' : '' ?>"
-                               href="<?= e($item['url']) ?>"
+                               href="<?= e(localized_url($item['url'])) ?>"
                                data-bs-toggle="dropdown"
                                data-bs-auto-close="true"
                                aria-expanded="false">
@@ -103,7 +103,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
                                 <div class="container">
                                     <?php foreach ($item['children'] as $child): ?>
                                         <a class="dropdown-item<?= nav_is_active($child['url']) ? ' active' : '' ?>"
-                                           href="<?= e($child['url']) ?>">
+                                           href="<?= e(localized_url($child['url'])) ?>">
                                             <?= e($child['title']) ?>
                                         </a>
                                     <?php endforeach; ?>
@@ -113,7 +113,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
                     <?php else: ?>
                         <li class="nav-item">
                             <a class="nav-link<?= $isActive ? ' active' : '' ?>"
-                               href="<?= e($item['url']) ?>">
+                               href="<?= e(localized_url($item['url'])) ?>">
                                 <?= e($item['title']) ?>
                             </a>
                         </li>
@@ -159,7 +159,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
 <div class="fx-mobile-overlay" id="fxMobileOverlay" aria-hidden="true" role="dialog" aria-label="Navigasyon menüsü">
     <!-- Başlık: logo + kapat butonu -->
     <div class="fx-mobile-overlay-head">
-        <a href="/" class="text-decoration-none d-flex align-items-center gap-2" onclick="closeMobileMenu()">
+        <a href="<?= e(home_url()) ?>" class="text-decoration-none d-flex align-items-center gap-2" onclick="closeMobileMenu()">
             <?php if ($logoPath): ?>
                 <img src="<?= e(asset_url($logoPath)) ?>" alt="<?= e($siteTitle) ?>" height="32" style="filter:brightness(0) invert(1);">
             <?php endif; ?>
@@ -178,7 +178,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
             <?php if (!empty($_mItem['children'])): ?>
                 <li class="fx-mob-item fx-mob-has-children">
                     <div class="fx-mob-item-row">
-                        <a href="<?= e($_mItem['url']) ?>" class="fx-mob-link" onclick="closeMobileMenu()">
+                        <a href="<?= e(localized_url($_mItem['url'])) ?>" class="fx-mob-link" onclick="closeMobileMenu()">
                             <?= e($_mItem['title']) ?>
                         </a>
                         <button type="button" class="fx-mob-toggle" aria-label="Alt menüyü aç/kapat">
@@ -188,7 +188,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
                     <ul class="fx-mob-children list-unstyled mb-0">
                         <?php foreach ($_mItem['children'] as $_mChild): ?>
                             <li>
-                                <a href="<?= e($_mChild['url']) ?>" class="fx-mob-child-link" onclick="closeMobileMenu()">
+                                <a href="<?= e(localized_url($_mChild['url'])) ?>" class="fx-mob-child-link" onclick="closeMobileMenu()">
                                     <?= e($_mChild['title']) ?>
                                 </a>
                             </li>
@@ -198,7 +198,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
             <?php else: ?>
                 <li class="fx-mob-item">
                     <div class="fx-mob-item-row">
-                        <a href="<?= e($_mItem['url']) ?>" class="fx-mob-link" onclick="closeMobileMenu()">
+                        <a href="<?= e(localized_url($_mItem['url'])) ?>" class="fx-mob-link" onclick="closeMobileMenu()">
                             <?= e($_mItem['title']) ?>
                         </a>
                     </div>

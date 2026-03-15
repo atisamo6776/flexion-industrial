@@ -69,7 +69,7 @@ foreach ($footerLinksRaw as $fl) {
             <!-- Şirket bilgisi -->
             <div class="col-md-4 col-lg-3">
                 <?php if ($logoPath): ?>
-                    <a href="/" class="d-inline-block mb-3">
+                    <a href="<?= e(home_url()) ?>" class="d-inline-block mb-3">
                         <img src="<?= e(asset_url($logoPath)) ?>" alt="<?= e($siteTitle) ?>"
                              height="<?= $logoHeight ?>" style="max-height:<?= $logoHeight ?>px;filter:brightness(0) invert(1);">
                     </a>
@@ -99,7 +99,7 @@ foreach ($footerLinksRaw as $fl) {
                         <ul class="list-unstyled small">
                             <?php foreach ($colData['links'] as $fl): ?>
                                 <li class="mb-1">
-                                    <a href="<?= e($fl['url']) ?>" class="fx-footer-link"><?= e($fl['title']) ?></a>
+                                    <a href="<?= e(localized_url($fl['url'])) ?>" class="fx-footer-link"><?= e($fl['title']) ?></a>
                                 </li>
                             <?php endforeach; ?>
                         </ul>

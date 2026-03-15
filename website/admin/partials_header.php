@@ -41,6 +41,32 @@ require_password_change_if_needed();
             background: #ffffff;
             border-bottom: 1px solid #e5e7eb;
         }
+        /* ── Marka kırmızısı ── */
+        :root { --fx-red: #e61421; --fx-red-dark: #c21020; }
+        .btn-primary {
+            background-color: var(--fx-red) !important;
+            border-color: var(--fx-red) !important;
+            color: #fff !important;
+        }
+        .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+            background-color: var(--fx-red-dark) !important;
+            border-color: var(--fx-red-dark) !important;
+        }
+        .btn-outline-primary {
+            color: var(--fx-red) !important;
+            border-color: var(--fx-red) !important;
+        }
+        .btn-outline-primary:hover, .btn-outline-primary:focus {
+            background-color: var(--fx-red) !important;
+            border-color: var(--fx-red) !important;
+            color: #fff !important;
+        }
+        .text-primary { color: var(--fx-red) !important; }
+        .bg-primary { background-color: var(--fx-red) !important; }
+        .border-primary { border-color: var(--fx-red) !important; }
+        .badge.bg-primary { background-color: var(--fx-red) !important; }
+        a.text-primary { color: var(--fx-red) !important; }
+        a.text-primary:hover { color: var(--fx-red-dark) !important; }
     </style>
 </head>
 <body>

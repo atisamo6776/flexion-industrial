@@ -126,7 +126,7 @@ if (!$page) {
     <div class="container py-5">
         <h1 class="h3 mb-3"><?= e(t('404_title', 'Page Not Found')) ?></h1>
         <p class="text-muted"><?= e(t('404_desc', 'The page you are looking for does not exist or is inactive.')) ?></p>
-        <a href="/" class="btn btn-outline-secondary btn-sm"><?= e(t('404_back', 'Back to homepage')) ?></a>
+        <a href="<?= e(home_url()) ?>" class="btn btn-outline-secondary btn-sm"><?= e(t('404_back', 'Back to homepage')) ?></a>
     </div>
     <?php
     require_once __DIR__ . '/includes/footer.php';

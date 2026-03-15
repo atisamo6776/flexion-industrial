@@ -121,7 +121,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':title'   => $trTitle,
                         ':content' => $trJson,
                     ]);
-                    $success = ucfirst($lang) . ' çevirisi kaydedildi.';
+                    header('Location: homepage.php?edit=' . (int)$sectionId . '#section-translations');
+                    exit;
                 } catch (Throwable $e) {
                     error_log('[homepage.php save_section_translation] ' . $e->getMessage());
                     $error = 'Çeviri kaydedilemedi.';
@@ -417,7 +418,7 @@ include __DIR__ . '/partials_header.php';
 
                 <?php if ($editSection): ?>
                 <!-- Dil Çevirileri -->
-                <hr>
+                <hr id="section-translations">
                 <h6 class="fw-semibold mb-3">Dil Çevirileri</h6>
                 <?php
                 $LANGS = ['en' => 'English', 'de' => 'Deutsch', 'it' => 'Italiano', 'fr' => 'Français'];
@@ -503,5 +504,15 @@ include __DIR__ . '/partials_header.php';
     document.addEventListener('DOMContentLoaded', function () {
         var list = document.getElementById('home-sections-list');
         if (list) Sortable.create(list, { handle: '.drag-handle', animation: 150 });
+
+        // Hash ile geldiyse ilgili bölüme scroll et
+        if (window.location.hash) {
+            var target = document.querySelector(window.location.hash);
+            if (target) {
+                setTimeout(function () {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 200);
+            }
+        }
     });
 </script>

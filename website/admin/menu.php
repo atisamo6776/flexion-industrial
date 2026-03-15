@@ -71,7 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ':title' => $trTitle,
                             ':url'   => $trUrl,
                         ]);
-                        $success = ucfirst($lang) . ' çevirisi kaydedildi.';
+                        header('Location: menu.php?edit=' . $menuItemId . '#menu-translations');
+                        exit;
                     } catch (Throwable $e) {
                         error_log('[menu.php save_item_translation] ' . $e->getMessage());
                         $error = 'Çeviri kaydedilemedi.';
@@ -282,7 +283,7 @@ include __DIR__ . '/partials_header.php';
 
                 <?php if ($editItem): ?>
                 <!-- Dil Çevirileri -->
-                <hr>
+                <hr id="menu-translations">
                 <h6 class="fw-semibold mb-3">Dil Çevirileri</h6>
                 <?php
                 $LANGS = ['en' => 'English', 'de' => 'Deutsch', 'it' => 'Italiano', 'fr' => 'Français'];
@@ -357,5 +358,17 @@ include __DIR__ . '/partials_header.php';
         document.getElementById('delete-target-id').value = id;
         document.getElementById('delete-form').submit();
     }
+
+    // Hash ile geldiyse ilgili bölüme scroll et
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.location.hash) {
+            var target = document.querySelector(window.location.hash);
+            if (target) {
+                setTimeout(function () {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 200);
+            }
+        }
+    });
 </script>
 
