@@ -30,6 +30,10 @@ Options -Indexes
     RewriteCond %{QUERY_STRING} ^id=([0-9]+)$
     RewriteRule ^news\.php$ /router.php?_route=old-news&id=%1 [R=301,L]
 
+    # page.php?slug=xxx → router (301 ile temiz URL'ye gidecek)
+    RewriteCond %{QUERY_STRING} slug=([^&]+)
+    RewriteRule ^page\.php$ router.php?_route=old-page&slug=%1 [L]
+
     # ===================================================================
     #  4. .php uzantısız talep → karşılık gelen .php dosyası varsa geç
     # ===================================================================

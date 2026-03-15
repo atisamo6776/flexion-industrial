@@ -51,14 +51,15 @@ if ($slug) {
 // İletişim formu PRG — başarı bayrağı GET ile taşınır
 $formSent  = isset($_GET['sent']) && $_GET['sent'] === '1';
 $formError = null;
+$isContactPage = $page && in_array($slug, ['iletisim', 'contact', 'kontakt', 'contatti'], true);
 
-if ($page && $slug === 'iletisim'
+if ($page && $isContactPage
     && $_SERVER['REQUEST_METHOD'] === 'POST'
     && !empty($_POST['contact_submit'])
 ) {
     // Honeypot: bot doldurursa sessizce geç
     if (!empty($_POST['website_url'])) {
-        header('Location: /iletisim?sent=1');
+        header('Location: ' . page_url($slug) . '?sent=1');
         exit;
     }
 
@@ -101,8 +102,8 @@ if ($page && $slug === 'iletisim'
                 send_notification_mail($toMail, $subj, $body);
             }
 
-            // PRG: Yönlendir → double-submit ve 500 engeli
-            header('Location: page.php?slug=' . urlencode($slug) . '&sent=1');
+            // PRG: Temiz URL ile yönlendir (/contact?sent=1 veya /de/kontakt?sent=1)
+            header('Location: ' . page_url($slug) . '?sent=1');
             exit;
         }
     }
@@ -165,7 +166,7 @@ $textAlignClass = $textAlignMap[$bTitlePos] ?? 'text-center';
 <section class="py-5">
     <div class="container">
 
-        <?php if ($slug !== 'iletisim'): ?>
+        <?php if (!$isContactPage): ?>
         <div class="row justify-content-center">
             <div class="col-lg-8 fx-animate">
                 <?php if (!$bannerImg): ?>

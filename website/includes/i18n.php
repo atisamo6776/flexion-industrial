@@ -31,6 +31,13 @@ function home_url(): string {
     return $prefix !== '' ? $prefix . '/' : '/';
 }
 
+// ── Seçili dilde bir sayfa slug'ı için temiz URL (/about-us veya /de/uber-uns)
+function page_url(string $slug): string {
+    if ($slug === '') return home_url();
+    $prefix = lang_prefix();
+    return $prefix !== '' ? $prefix . '/' . $slug : '/' . $slug;
+}
+
 // ── İç linki seçili dile göre prefix'le ────────────────────────────────────
 // Harici URL'ler (http/https ile başlayanlar) değişmeden döner.
 // Ana sayfa (index.php, /index.php, /) → her zaman home_url() (temiz URL: / veya /de/).

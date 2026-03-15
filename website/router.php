@@ -12,7 +12,7 @@ require_once __DIR__ . '/includes/functions.php';
 
 $route = $_GET['_route'] ?? '';
 $lang  = $_GET['lang']   ?? CURRENT_LANG;
-$slug  = $_GET['slug']   ?? '';
+$slug  = trim(rawurldecode((string) ($_GET['slug'] ?? '')));
 $id    = (int) ($_GET['id'] ?? 0);
 $pdo   = db();
 
@@ -93,6 +93,44 @@ if ($route === 'old-news' && $id > 0) {
         }
     } catch (Throwable $e) {
         error_log('router old-news: ' . $e->getMessage());
+    }
+    http_response_code(404);
+    include __DIR__ . '/404.php';
+    exit;
+}
+
+// ── page.php?slug=xxx → temiz URL'ye 301 (/about-us veya /de/uber-uns) ────────
+if ($route === 'old-page' && $slug !== '') {
+    try {
+        // Sayfayı herhangi bir dilden slug ile bul (page_translations veya pages)
+        $stmt = $pdo->prepare(
+            'SELECT p.id FROM pages p
+             LEFT JOIN page_translations pt ON pt.page_id = p.id AND pt.slug = ?
+             WHERE (pt.page_id IS NOT NULL OR p.slug = ?) AND p.is_active = 1
+             LIMIT 1'
+        );
+        $stmt->execute([$slug, $slug]);
+        $pageId = $stmt->fetchColumn();
+        if ($pageId) {
+            // Hedef dilde slug al
+            $stmt2 = $pdo->prepare(
+                'SELECT slug FROM page_translations WHERE page_id = ? AND language = ? LIMIT 1'
+            );
+            $stmt2->execute([$pageId, $lang]);
+            $targetSlug = $stmt2->fetchColumn();
+            if (!$targetSlug) {
+                $stmt3 = $pdo->prepare('SELECT slug FROM pages WHERE id = ? LIMIT 1');
+                $stmt3->execute([$pageId]);
+                $targetSlug = $stmt3->fetchColumn();
+            }
+            if ($targetSlug) {
+                $clean = ($lang !== 'en') ? $prefix . '/' . rawurlencode($targetSlug) : '/' . rawurlencode($targetSlug);
+                header('Location: ' . $clean, true, 301);
+                exit;
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('router old-page: ' . $e->getMessage());
     }
     http_response_code(404);
     include __DIR__ . '/404.php';

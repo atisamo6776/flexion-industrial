@@ -80,11 +80,15 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
             <ul class="navbar-nav ms-auto fx-main-nav">
                 <?php foreach ($menu as $item): ?>
                     <?php
-                    $selfActive   = nav_is_active($item['url']);
+                    $itemHref = page_clean_url($item['url']);
+                    if ($itemHref === $item['url']) { $itemHref = localized_url($item['url']); }
+                    $selfActive   = nav_is_active($itemHref);
                     $childActive  = false;
                     if (!empty($item['children'])) {
                         foreach ($item['children'] as $ch) {
-                            if (nav_is_active($ch['url'])) { $childActive = true; break; }
+                            $chHref = page_clean_url($ch['url']);
+                            if ($chHref === $ch['url']) { $chHref = localized_url($ch['url']); }
+                            if (nav_is_active($chHref)) { $childActive = true; break; }
                         }
                     }
                     $isActive = $selfActive || $childActive;
@@ -92,7 +96,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
                     <?php if (!empty($item['children'])): ?>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle<?= $isActive ? ' active' : '' ?>"
-                               href="<?= e(localized_url($item['url'])) ?>"
+                               href="<?= e($itemHref) ?>"
                                data-bs-toggle="dropdown"
                                data-bs-auto-close="true"
                                aria-expanded="false">
@@ -102,8 +106,9 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
                             <div class="dropdown-menu fx-dd<?= $childCount > 3 ? ' fx-dd--wide' : '' ?>">
                                 <div class="container">
                                     <?php foreach ($item['children'] as $child): ?>
-                                        <a class="dropdown-item<?= nav_is_active($child['url']) ? ' active' : '' ?>"
-                                           href="<?= e(localized_url($child['url'])) ?>">
+                                        <?php $childHref = page_clean_url($child['url']); if ($childHref === $child['url']) { $childHref = localized_url($child['url']); } ?>
+                                        <a class="dropdown-item<?= nav_is_active($childHref) ? ' active' : '' ?>"
+                                           href="<?= e($childHref) ?>">
                                             <?= e($child['title']) ?>
                                         </a>
                                     <?php endforeach; ?>
@@ -113,7 +118,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
                     <?php else: ?>
                         <li class="nav-item">
                             <a class="nav-link<?= $isActive ? ' active' : '' ?>"
-                               href="<?= e(localized_url($item['url'])) ?>">
+                               href="<?= e($itemHref) ?>">
                                 <?= e($item['title']) ?>
                             </a>
                         </li>

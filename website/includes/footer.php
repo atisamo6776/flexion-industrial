@@ -99,7 +99,8 @@ foreach ($footerLinksRaw as $fl) {
                         <ul class="list-unstyled small">
                             <?php foreach ($colData['links'] as $fl): ?>
                                 <li class="mb-1">
-                                    <a href="<?= e(localized_url($fl['url'])) ?>" class="fx-footer-link"><?= e($fl['title']) ?></a>
+                                    <?php $flHref = page_clean_url($fl['url']); if ($flHref === $fl['url']) { $flHref = localized_url($fl['url']); } ?>
+                                    <a href="<?= e($flHref) ?>" class="fx-footer-link"><?= e($fl['title']) ?></a>
                                 </li>
                             <?php endforeach; ?>
                         </ul>

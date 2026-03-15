@@ -229,6 +229,58 @@ function get_main_menu(): array
 }
 
 /**
+ * page.php?slug=xxx formatındaki URL'leri seçili dilde temiz sayfa URL'ine çevirir.
+ * Menü/footer'da eski linkler temiz URL olarak çıksın diye kullanılır.
+ */
+function page_clean_url(string $url): string
+{
+    if ($url === '' || strpos($url, 'page.php') === false) {
+        return $url;
+    }
+    $q = parse_url($url, PHP_URL_QUERY);
+    if ($q === null || $q === '') {
+        return $url;
+    }
+    parse_str($q, $params);
+    $slug = trim($params['slug'] ?? '');
+    if ($slug === '') {
+        return $url;
+    }
+    $lang = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+    try {
+        $pdo = db();
+        $stmt = $pdo->prepare(
+            'SELECT p.id FROM pages p
+             LEFT JOIN page_translations pt ON pt.page_id = p.id AND pt.slug = ?
+             WHERE (pt.page_id IS NOT NULL OR p.slug = ?) AND p.is_active = 1 LIMIT 1'
+        );
+        $stmt->execute([$slug, $slug]);
+        $pageId = $stmt->fetchColumn();
+        if (!$pageId) {
+            return $url;
+        }
+        $stmt2 = $pdo->prepare('SELECT slug FROM page_translations WHERE page_id = ? AND language = ? LIMIT 1');
+        $stmt2->execute([$pageId, $lang]);
+        $targetSlug = $stmt2->fetchColumn();
+        if (!$targetSlug) {
+            $stmt3 = $pdo->prepare('SELECT slug FROM pages WHERE id = ? LIMIT 1');
+            $stmt3->execute([$pageId]);
+            $targetSlug = $stmt3->fetchColumn();
+        }
+        if ($targetSlug && function_exists('page_url')) {
+            return page_url($targetSlug);
+        }
+        if ($targetSlug) {
+            $prefix = function_exists('lang_prefix') ? lang_prefix() : '';
+            return $prefix !== '' ? $prefix . '/' . $targetSlug : '/' . $targetSlug;
+        }
+    } catch (Throwable $e) {
+        // sessizce orijinal URL dön
+    }
+    return $url;
+}
+
+/**
  * Tüm aktif kategorileri düz liste olarak getirir.
  */
 function get_active_categories(): array
