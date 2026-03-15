@@ -244,6 +244,52 @@ $tableMigrations = [
         KEY `idx_news_id` (`news_id`),
         KEY `idx_language` (`language`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    // ── i18n: UI & Site metinleri ──────────────────────────────────────────────
+    'site_translations' => "CREATE TABLE `site_translations` (
+        `id`       INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+        `key`      VARCHAR(100)  NOT NULL,
+        `language` VARCHAR(5)    NOT NULL DEFAULT 'en',
+        `value`    TEXT          NULL,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_key_lang` (`key`, `language`),
+        KEY `idx_language` (`language`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'home_section_translations' => "CREATE TABLE `home_section_translations` (
+        `id`           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+        `section_id`   INT UNSIGNED  NOT NULL,
+        `language`     VARCHAR(5)    NOT NULL DEFAULT 'en',
+        `title`        VARCHAR(255)  NULL,
+        `content_json` LONGTEXT      NULL,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_section_lang` (`section_id`, `language`),
+        KEY `idx_section_id` (`section_id`),
+        KEY `idx_language` (`language`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'menu_item_translations' => "CREATE TABLE `menu_item_translations` (
+        `id`           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+        `menu_item_id` INT UNSIGNED  NOT NULL,
+        `language`     VARCHAR(5)    NOT NULL DEFAULT 'en',
+        `title`        VARCHAR(200)  NOT NULL DEFAULT '',
+        `url`          VARCHAR(500)  NOT NULL DEFAULT '',
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_menu_lang` (`menu_item_id`, `language`),
+        KEY `idx_menu_item_id` (`menu_item_id`),
+        KEY `idx_language` (`language`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'footer_link_translations' => "CREATE TABLE `footer_link_translations` (
+        `id`             INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+        `footer_link_id` INT UNSIGNED  NOT NULL,
+        `language`       VARCHAR(5)    NOT NULL DEFAULT 'en',
+        `title`          VARCHAR(255)  NOT NULL DEFAULT '',
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_fl_lang` (`footer_link_id`, `language`),
+        KEY `idx_footer_link_id` (`footer_link_id`),
+        KEY `idx_language` (`language`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 ];
 
 $columnMigrations = [
@@ -401,7 +447,209 @@ if ($runMigration) {
         }
     }
 
-    // 4. Varsayılan admin kullanıcısı
+    // 4. site_translations: varsayılan EN değerleri (varsa dokunma)
+    $siteTranslationDefaults = [
+        // ─ Genel ──────────────────────────────────────────────────────────
+        ['site_title',               'en', 'Flexion Industrial'],
+        ['site_title',               'de', 'Flexion Industrial'],
+        ['site_title',               'it', 'Flexion Industrial'],
+        ['site_title',               'fr', 'Flexion Industrial'],
+        ['topbar_text',              'en', 'Industrial rubber and cable solutions'],
+        ['topbar_text',              'de', 'Industrielle Gummi- und Kabellösungen'],
+        ['topbar_text',              'it', 'Soluzioni industriali in gomma e cavi'],
+        ['topbar_text',              'fr', 'Solutions industrielles en caoutchouc et câbles'],
+        ['meta_description',         'en', 'Flexion industrial hose and cable solutions'],
+        ['meta_description',         'de', 'Flexion industrielle Schlauch- und Kabellösungen'],
+        ['meta_description',         'it', 'Soluzioni industriali per tubi e cavi Flexion'],
+        ['meta_description',         'fr', 'Solutions industrielles de tuyaux et câbles Flexion'],
+        // ─ Site arama ─────────────────────────────────────────────────────
+        ['search_placeholder',       'en', 'Search products...'],
+        ['search_placeholder',       'de', 'Produkte suchen...'],
+        ['search_placeholder',       'it', 'Cerca prodotti...'],
+        ['search_placeholder',       'fr', 'Rechercher des produits...'],
+        // ─ Butonlar ────────────────────────────────────────────────────────
+        ['btn_submit',               'en', 'Send'],
+        ['btn_submit',               'de', 'Senden'],
+        ['btn_submit',               'it', 'Invia'],
+        ['btn_submit',               'fr', 'Envoyer'],
+        ['btn_view_all',             'en', 'View All'],
+        ['btn_view_all',             'de', 'Alle anzeigen'],
+        ['btn_view_all',             'it', 'Vedi tutti'],
+        ['btn_view_all',             'fr', 'Voir tout'],
+        // ─ Ana sayfa ──────────────────────────────────────────────────────
+        ['home_btn_view_sectors',    'en', 'View All Sectors'],
+        ['home_btn_view_sectors',    'de', 'Alle Sektoren anzeigen'],
+        ['home_btn_view_sectors',    'it', 'Vedi tutti i settori'],
+        ['home_btn_view_sectors',    'fr', 'Voir tous les secteurs'],
+        ['home_no_categories',       'en', 'No categories added yet.'],
+        ['home_no_categories',       'de', 'Noch keine Kategorien hinzugefügt.'],
+        ['home_no_categories',       'it', 'Nessuna categoria aggiunta.'],
+        ['home_no_categories',       'fr', 'Aucune catégorie ajoutée.'],
+        ['home_upload_image',        'en', 'Upload image (Admin → Home Sections)'],
+        ['home_upload_image',        'de', 'Bild hochladen (Admin → Startseite)'],
+        ['home_upload_image',        'it', 'Carica immagine (Admin → Sezioni home)'],
+        ['home_upload_image',        'fr', 'Télécharger image (Admin → Sections accueil)'],
+        // ─ Haberler ───────────────────────────────────────────────────────
+        ['news_banner_title',        'en', 'News & Insights'],
+        ['news_banner_title',        'de', 'Neuigkeiten & Einblicke'],
+        ['news_banner_title',        'it', 'Notizie & Approfondimenti'],
+        ['news_banner_title',        'fr', 'Actualités & Perspectives'],
+        ['news_other',               'en', 'Other News'],
+        ['news_other',               'de', 'Weitere Neuigkeiten'],
+        ['news_other',               'it', 'Altre notizie'],
+        ['news_other',               'fr', 'Autres actualités'],
+        ['news_back',                'en', 'Back to news'],
+        ['news_back',                'de', 'Zurück zu den Neuigkeiten'],
+        ['news_back',                'it', 'Torna alle notizie'],
+        ['news_back',                'fr', 'Retour aux actualités'],
+        // ─ Kategoriler ────────────────────────────────────────────────────
+        ['cat_not_found',            'en', 'Category not found'],
+        ['cat_not_found',            'de', 'Kategorie nicht gefunden'],
+        ['cat_not_found',            'it', 'Categoria non trovata'],
+        ['cat_not_found',            'fr', 'Catégorie introuvable'],
+        ['cat_back_sectors',         'en', 'Back to all sectors'],
+        ['cat_back_sectors',         'de', 'Zurück zu allen Sektoren'],
+        ['cat_back_sectors',         'it', 'Torna a tutti i settori'],
+        ['cat_back_sectors',         'fr', 'Retour à tous les secteurs'],
+        ['cat_categories_title',     'en', 'Categories'],
+        ['cat_categories_title',     'de', 'Kategorien'],
+        ['cat_categories_title',     'it', 'Categorie'],
+        ['cat_categories_title',     'fr', 'Catégories'],
+        ['cat_products_count',       'en', 'product(s)'],
+        ['cat_products_count',       'de', 'Produkt(e)'],
+        ['cat_products_count',       'it', 'prodotto/i'],
+        ['cat_products_count',       'fr', 'produit(s)'],
+        ['cat_sort_relevance',       'en', 'Relevance'],
+        ['cat_sort_relevance',       'de', 'Relevanz'],
+        ['cat_sort_relevance',       'it', 'Rilevanza'],
+        ['cat_sort_relevance',       'fr', 'Pertinence'],
+        ['cat_sort_az',              'en', 'A–Z'],
+        ['cat_sort_az',              'de', 'A–Z'],
+        ['cat_sort_az',              'it', 'A–Z'],
+        ['cat_sort_az',              'fr', 'A–Z'],
+        ['cat_sort_za',              'en', 'Z–A'],
+        ['cat_sort_za',              'de', 'Z–A'],
+        ['cat_sort_za',              'it', 'Z–A'],
+        ['cat_sort_za',              'fr', 'Z–A'],
+        // ─ Ürün ───────────────────────────────────────────────────────────
+        ['prod_not_found',           'en', 'Product not found'],
+        ['prod_not_found',           'de', 'Produkt nicht gefunden'],
+        ['prod_not_found',           'it', 'Prodotto non trovato'],
+        ['prod_not_found',           'fr', 'Produit introuvable'],
+        ['prod_back',                'en', 'Back to products'],
+        ['prod_back',                'de', 'Zurück zu den Produkten'],
+        ['prod_back',                'it', 'Torna ai prodotti'],
+        ['prod_back',                'fr', 'Retour aux produits'],
+        ['prod_inquiry_title',       'en', 'Request Information'],
+        ['prod_inquiry_title',       'de', 'Informationen anfragen'],
+        ['prod_inquiry_title',       'it', 'Richiedi informazioni'],
+        ['prod_inquiry_title',       'fr', 'Demander des informations'],
+        ['prod_inquiry_sent',        'en', 'Your request has been received. We will contact you shortly.'],
+        ['prod_inquiry_sent',        'de', 'Ihre Anfrage wurde erhalten. Wir werden uns in Kürze melden.'],
+        ['prod_inquiry_sent',        'it', 'La tua richiesta è stata ricevuta. La contatteremo a breve.'],
+        ['prod_inquiry_sent',        'fr', 'Votre demande a été reçue. Nous vous contacterons prochainement.'],
+        ['prod_related',             'en', 'Related Products'],
+        ['prod_related',             'de', 'Verwandte Produkte'],
+        ['prod_related',             'it', 'Prodotti correlati'],
+        ['prod_related',             'fr', 'Produits connexes'],
+        ['prod_spec_title',          'en', 'Technical Specifications'],
+        ['prod_spec_title',          'de', 'Technische Spezifikationen'],
+        ['prod_spec_title',          'it', 'Specifiche tecniche'],
+        ['prod_spec_title',          'fr', 'Spécifications techniques'],
+        ['prod_docs_title',          'en', 'Documents'],
+        ['prod_docs_title',          'de', 'Dokumente'],
+        ['prod_docs_title',          'it', 'Documenti'],
+        ['prod_docs_title',          'fr', 'Documents'],
+        ['prod_regs_title',          'en', 'Regulations & Certifications'],
+        ['prod_regs_title',          'de', 'Normen & Zertifizierungen'],
+        ['prod_regs_title',          'it', 'Normative & Certificazioni'],
+        ['prod_regs_title',          'fr', 'Réglementations & Certifications'],
+        // ─ Çerez ──────────────────────────────────────────────────────────
+        ['cookie_message',           'en', 'This website uses cookies to provide the best experience.'],
+        ['cookie_message',           'de', 'Diese Website verwendet Cookies, um das beste Erlebnis zu bieten.'],
+        ['cookie_message',           'it', 'Questo sito utilizza cookie per offrirti la migliore esperienza.'],
+        ['cookie_message',           'fr', 'Ce site utilise des cookies pour offrir la meilleure expérience.'],
+        ['cookie_policy_link',       'en', 'Privacy Policy'],
+        ['cookie_policy_link',       'de', 'Datenschutzerklärung'],
+        ['cookie_policy_link',       'it', 'Informativa sulla privacy'],
+        ['cookie_policy_link',       'fr', 'Politique de confidentialité'],
+        ['cookie_accept',            'en', 'Accept'],
+        ['cookie_accept',            'de', 'Akzeptieren'],
+        ['cookie_accept',            'it', 'Accetta'],
+        ['cookie_accept',            'fr', 'Accepter'],
+        ['cookie_reject',            'en', 'Decline'],
+        ['cookie_reject',            'de', 'Ablehnen'],
+        ['cookie_reject',            'it', 'Rifiuta'],
+        ['cookie_reject',            'fr', 'Refuser'],
+        // ─ Footer ─────────────────────────────────────────────────────────
+        ['footer_rights',            'en', 'All rights reserved.'],
+        ['footer_rights',            'de', 'Alle Rechte vorbehalten.'],
+        ['footer_rights',            'it', 'Tutti i diritti riservati.'],
+        ['footer_rights',            'fr', 'Tous droits réservés.'],
+        ['footer_newsletter_label',  'en', 'Stay Updated'],
+        ['footer_newsletter_label',  'de', 'Bleiben Sie auf dem Laufenden'],
+        ['footer_newsletter_label',  'it', 'Rimani aggiornato'],
+        ['footer_newsletter_label',  'fr', 'Restez informé'],
+        // ─ 404 ────────────────────────────────────────────────────────────
+        ['404_title',                'en', 'Page Not Found'],
+        ['404_title',                'de', 'Seite nicht gefunden'],
+        ['404_title',                'it', 'Pagina non trovata'],
+        ['404_title',                'fr', 'Page introuvable'],
+        ['404_back',                 'en', 'Back to homepage'],
+        ['404_back',                 'de', 'Zurück zur Startseite'],
+        ['404_back',                 'it', 'Torna alla home'],
+        ['404_back',                 'fr', "Retour à l'accueil"],
+        // ─ Form alanları ──────────────────────────────────────────────────
+        ['form_name',                'en', 'Name'],
+        ['form_name',                'de', 'Name'],
+        ['form_name',                'it', 'Nome'],
+        ['form_name',                'fr', 'Nom'],
+        ['form_surname',             'en', 'Surname'],
+        ['form_surname',             'de', 'Nachname'],
+        ['form_surname',             'it', 'Cognome'],
+        ['form_surname',             'fr', 'Prénom'],
+        ['form_email',               'en', 'E-mail'],
+        ['form_email',               'de', 'E-Mail'],
+        ['form_email',               'it', 'E-mail'],
+        ['form_email',               'fr', 'E-mail'],
+        ['form_phone',               'en', 'Phone'],
+        ['form_phone',               'de', 'Telefon'],
+        ['form_phone',               'it', 'Telefono'],
+        ['form_phone',               'fr', 'Téléphone'],
+        ['form_company',             'en', 'Company'],
+        ['form_company',             'de', 'Unternehmen'],
+        ['form_company',             'it', 'Azienda'],
+        ['form_company',             'fr', 'Société'],
+        ['form_country',             'en', 'Country'],
+        ['form_country',             'de', 'Land'],
+        ['form_country',             'it', 'Paese'],
+        ['form_country',             'fr', 'Pays'],
+        ['form_message',             'en', 'Message'],
+        ['form_message',             'de', 'Nachricht'],
+        ['form_message',             'it', 'Messaggio'],
+        ['form_message',             'fr', 'Message'],
+        ['form_contact_success',     'en', 'Your message has been sent. We will contact you shortly.'],
+        ['form_contact_success',     'de', 'Ihre Nachricht wurde gesendet. Wir werden uns in Kürze melden.'],
+        ['form_contact_success',     'it', 'Il tuo messaggio è stato inviato. La contatteremo a breve.'],
+        ['form_contact_success',     'fr', 'Votre message a été envoyé. Nous vous contacterons prochainement.'],
+    ];
+
+    if (mg_table_exists($pdo, $dbName, 'site_translations')) {
+        $stmtST = $pdo->prepare(
+            'INSERT INTO site_translations (`key`, `language`, `value`) VALUES (:k, :l, :v)
+             ON DUPLICATE KEY UPDATE `key` = `key`'
+        );
+        foreach ($siteTranslationDefaults as [$key, $lang, $val]) {
+            try {
+                $stmtST->execute([':k' => $key, ':l' => $lang, ':v' => $val]);
+            } catch (Throwable $e) {
+                // ignore
+            }
+        }
+        $results[] = ['label' => 'site_translations: varsayılan değerler', 'status' => 'ok', 'msg' => count($siteTranslationDefaults) . ' satır işlendi'];
+    }
+
+    // 5. Varsayılan admin kullanıcısı
     $label = 'Kullanıcı: <code>admin</code>';
     try {
         $cnt = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE username = 'admin'")->fetchColumn();

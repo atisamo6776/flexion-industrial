@@ -78,6 +78,9 @@ require_password_change_if_needed();
                 <a href="header-footer.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'header-footer.php' ? 'active' : '' ?>">
                     <i class="bi bi-layout-three-columns me-2"></i>Header / Footer
                 </a>
+                <a href="translations.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'translations.php' ? 'active' : '' ?>">
+                    <i class="bi bi-translate me-2"></i>Site Çevirileri
+                </a>
                 <a href="settings.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'settings.php' ? 'active' : '' ?>">
                     <i class="bi bi-gear me-2"></i>Genel Ayarlar
                 </a>

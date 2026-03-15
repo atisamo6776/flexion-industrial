@@ -147,10 +147,13 @@ function get_setting(string $key, ?string $default = null): ?string
 }
 
 /**
- * Ana menüyü getirir. Tablo yoksa boş dizi döner.
+ * Ana menüyü getirir. menu_item_translations tablosundan dil bazlı
+ * title/url uygular; çeviri yoksa orijinal değeri korur.
+ * Tablo yoksa boş dizi döner.
  */
 function get_main_menu(): array
 {
+    $lang = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
     try {
         $pdo   = db();
         $stmt  = $pdo->query('SELECT * FROM menu_items WHERE is_active = 1 ORDER BY sort_order ASC, id ASC');
@@ -160,10 +163,40 @@ function get_main_menu(): array
         return [];
     }
 
-    // Basit hiyerarşi
+    // Çevirileri çek
+    $translations = [];
+    try {
+        $pdo2 = db();
+        $stmt2 = $pdo2->prepare(
+            "SELECT menu_item_id, language, title, url
+             FROM menu_item_translations
+             WHERE language IN (:l, 'en')"
+        );
+        $stmt2->execute([':l' => $lang]);
+        foreach ($stmt2->fetchAll() as $tr) {
+            $translations[$tr['menu_item_id']][$tr['language']] = $tr;
+        }
+    } catch (Throwable $e) {
+        // menu_item_translations tablosu henüz yoksa sessizce devam et
+    }
+
+    // Çeviriyi uygula
+    foreach ($items as &$item) {
+        $id = $item['id'];
+        $tr = $translations[$id][$lang]
+           ?? $translations[$id]['en']
+           ?? null;
+        if ($tr) {
+            if (!empty($tr['title'])) $item['title'] = $tr['title'];
+            if (!empty($tr['url']))   $item['url']   = $tr['url'];
+        }
+        $item['children'] = [];
+    }
+    unset($item);
+
+    // Hiyerarşi
     $tree = [];
     foreach ($items as $item) {
-        $item['children'] = [];
         $tree[$item['id']] = $item;
     }
     $root = [];
@@ -244,10 +277,13 @@ function get_categories_tree(): array
 }
 
 /**
- * Ana sayfa bölümlerini getirir. Tablo yoksa boş dizi döner.
+ * Ana sayfa bölümlerini getirir. home_section_translations tablosundan
+ * dil bazlı title/content_json uygular; çeviri yoksa orijinal korunur.
+ * Tablo yoksa boş dizi döner.
  */
 function get_home_sections(): array
 {
+    $lang = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
     try {
         $pdo  = db();
         $stmt = $pdo->query('SELECT * FROM home_sections WHERE is_active = 1 ORDER BY sort_order ASC, id ASC');
@@ -256,8 +292,40 @@ function get_home_sections(): array
         return [];
     }
 
+    $rows = $stmt->fetchAll();
+    if (empty($rows)) return [];
+
+    // Çevirileri tek sorguda çek
+    $translations = [];
+    try {
+        $ids   = array_column($rows, 'id');
+        $in    = implode(',', array_fill(0, count($ids), '?'));
+        $pdo2  = db();
+        $stmt2 = $pdo2->prepare(
+            "SELECT section_id, language, title, content_json
+             FROM home_section_translations
+             WHERE section_id IN ({$in}) AND language IN (?, 'en')"
+        );
+        $stmt2->execute(array_merge($ids, [$lang]));
+        foreach ($stmt2->fetchAll() as $tr) {
+            $translations[$tr['section_id']][$tr['language']] = $tr;
+        }
+    } catch (Throwable $e) {
+        // home_section_translations tablosu henüz yoksa sessizce devam et
+    }
+
     $sections = [];
-    foreach ($stmt as $row) {
+    foreach ($rows as $row) {
+        $id = $row['id'];
+        $tr = $translations[$id][$lang]
+           ?? $translations[$id]['en']
+           ?? null;
+
+        if ($tr) {
+            if (!empty($tr['title']))        $row['title']        = $tr['title'];
+            if (!empty($tr['content_json'])) $row['content_json'] = $tr['content_json'];
+        }
+
         $row['content'] = [];
         if (!empty($row['content_json'])) {
             $data = json_decode($row['content_json'], true);
@@ -325,7 +393,7 @@ function render_news_banner(): void
     if (!$bannerImg) {
         return;
     }
-    $bannerTitle = get_setting('news_banner_title', 'Haberler &amp; Insights');
+    $bannerTitle = t('news_banner_title', get_setting('news_banner_title', 'News &amp; Insights'));
     $opacity     = max(0, min(100, (int) get_setting('news_banner_opacity', '50')));
     $blur        = max(0, min(20,  (int) get_setting('news_banner_blur', '0')));
     $titleColor  = get_setting('news_banner_title_color', '#ffffff');
@@ -353,6 +421,44 @@ function render_news_banner(): void
 // ════════════════════════════════════════════════════════════════════
 //  i18n Yardımcıları
 // ════════════════════════════════════════════════════════════════════
+
+/**
+ * site_translations tablosundan UI metnini getirir.
+ * Önce CURRENT_LANG, yoksa 'en', o da yoksa $default döner.
+ */
+function t(string $key, string $default = ''): string
+{
+    static $cache = [];
+    $lang = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+    $cacheKey = $lang . ':' . $key;
+
+    if (array_key_exists($cacheKey, $cache)) {
+        return $cache[$cacheKey];
+    }
+
+    try {
+        $pdo = db();
+        $stmt = $pdo->prepare(
+            "SELECT `value` FROM `site_translations`
+             WHERE `key` = :k AND `language` = :l LIMIT 1"
+        );
+        $stmt->execute([':k' => $key, ':l' => $lang]);
+        $val = $stmt->fetchColumn();
+
+        if ($val === false && $lang !== 'en') {
+            $stmt->execute([':k' => $key, ':l' => 'en']);
+            $val = $stmt->fetchColumn();
+        }
+
+        $result = ($val !== false) ? (string)$val : $default;
+    } catch (Throwable $e) {
+        error_log('[flexion] t() error for key=' . $key . ': ' . $e->getMessage());
+        $result = $default;
+    }
+
+    $cache[$cacheKey] = $result;
+    return $result;
+}
 
 /**
  * Türkçe/özel karakterleri içeren metinden URL dostu slug üretir.

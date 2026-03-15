@@ -52,6 +52,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Menü öğesi kaydedilemedi. Lütfen <a href="migrate.php">migrasyonu</a> kontrol edin.';
                 }
             }
+        } elseif (isset($_POST['save_item_translation'])) {
+            $menuItemId = (int) ($_POST['menu_item_id'] ?? 0);
+            $lang       = trim($_POST['translation_lang'] ?? '');
+            $SUPPORTED  = ['en', 'de', 'it', 'fr'];
+            if ($menuItemId > 0 && in_array($lang, $SUPPORTED, true)) {
+                $trTitle = trim($_POST['tr_title'] ?? '');
+                $trUrl   = trim($_POST['tr_url'] ?? '');
+                if ($trTitle !== '') {
+                    try {
+                        $pdo->prepare(
+                            'INSERT INTO menu_item_translations (menu_item_id, language, title, url)
+                             VALUES (:mid, :lang, :title, :url)
+                             ON DUPLICATE KEY UPDATE title = VALUES(title), url = VALUES(url)'
+                        )->execute([
+                            ':mid'   => $menuItemId,
+                            ':lang'  => $lang,
+                            ':title' => $trTitle,
+                            ':url'   => $trUrl,
+                        ]);
+                        $success = ucfirst($lang) . ' çevirisi kaydedildi.';
+                    } catch (Throwable $e) {
+                        error_log('[menu.php save_item_translation] ' . $e->getMessage());
+                        $error = 'Çeviri kaydedilemedi.';
+                    }
+                }
+            }
         } elseif (isset($_POST['delete_item'])) {
             $id = (int) ($_POST['id'] ?? 0);
             if ($id > 0) {
@@ -253,6 +279,62 @@ include __DIR__ . '/partials_header.php';
                         <?= $editItem ? 'Güncelle' : 'Ekle' ?>
                     </button>
                 </form>
+
+                <?php if ($editItem): ?>
+                <!-- Dil Çevirileri -->
+                <hr>
+                <h6 class="fw-semibold mb-3">Dil Çevirileri</h6>
+                <?php
+                $LANGS = ['en' => 'English', 'de' => 'Deutsch', 'it' => 'Italiano', 'fr' => 'Français'];
+                $menuTrans = [];
+                try {
+                    $mtStmt = $pdo->prepare('SELECT * FROM menu_item_translations WHERE menu_item_id = ?');
+                    $mtStmt->execute([$editItem['id']]);
+                    foreach ($mtStmt->fetchAll() as $mt) {
+                        $menuTrans[$mt['language']] = $mt;
+                    }
+                } catch (Throwable $e) {}
+                ?>
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <?php $first = true; foreach ($LANGS as $lCode => $lLabel): ?>
+                    <li class="nav-item">
+                        <button class="nav-link <?= $first ? 'active' : '' ?>"
+                                data-bs-toggle="tab"
+                                data-bs-target="#menu-tr-<?= $lCode ?>"
+                                type="button"><?= $lLabel ?>
+                            <?php if (isset($menuTrans[$lCode])): ?>
+                                <span class="badge bg-success ms-1" style="font-size:.6rem;">✓</span>
+                            <?php endif; ?>
+                        </button>
+                    </li>
+                    <?php $first = false; endforeach; ?>
+                </ul>
+                <div class="tab-content">
+                    <?php $first = true; foreach ($LANGS as $lCode => $lLabel): ?>
+                    <div class="tab-pane fade <?= $first ? 'show active' : '' ?>" id="menu-tr-<?= $lCode ?>">
+                        <form method="post">
+                            <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
+                            <input type="hidden" name="save_item_translation" value="1">
+                            <input type="hidden" name="menu_item_id" value="<?= e((string)$editItem['id']) ?>">
+                            <input type="hidden" name="translation_lang" value="<?= e($lCode) ?>">
+                            <div class="mb-2">
+                                <label class="form-label form-label-sm">Başlık <span class="text-danger">*</span></label>
+                                <input type="text" name="tr_title" class="form-control form-control-sm"
+                                       value="<?= e($menuTrans[$lCode]['title'] ?? '') ?>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label form-label-sm">URL</label>
+                                <input type="text" name="tr_url" class="form-control form-control-sm"
+                                       value="<?= e($menuTrans[$lCode]['url'] ?? '') ?>"
+                                       placeholder="<?= e($editItem['url']) ?>">
+                                <div class="form-text">Boş bırakırsan varsayılan URL kullanılır.</div>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary"><?= e($lLabel) ?> Kaydet</button>
+                        </form>
+                    </div>
+                    <?php $first = false; endforeach; ?>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

@@ -6,29 +6,69 @@ $sections   = get_home_sections();
 $categories = get_active_categories();
 $latestNews = get_latest_news(3);
 
+// Kategori çevirilerini yükle (toplu sorgu)
+$_catTrans = [];
+if (!empty($categories)) {
+    $_lang = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+    try {
+        $_pdo2 = db();
+        $_catIds = array_column($categories, 'id');
+        $_in   = implode(',', array_fill(0, count($_catIds), '?'));
+        $_stmt2 = $_pdo2->prepare(
+            "SELECT category_id, language, name, short_description, slug
+             FROM category_translations
+             WHERE category_id IN ({$_in}) AND language IN (?, 'en')"
+        );
+        $_stmt2->execute(array_merge($_catIds, [$_lang]));
+        foreach ($_stmt2->fetchAll() as $_tr) {
+            $_catTrans[$_tr['category_id']][$_tr['language']] = $_tr;
+        }
+    } catch (Throwable $_e) { }
+}
+
+// Haber çevirilerini yükle
+$_newsTrans = [];
+if (!empty($latestNews)) {
+    $_lang = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+    try {
+        $_pdo3 = db();
+        $_nIds = array_column($latestNews, 'id');
+        $_in3  = implode(',', array_fill(0, count($_nIds), '?'));
+        $_stmt3 = $_pdo3->prepare(
+            "SELECT news_id, language, title, summary, slug
+             FROM news_translations
+             WHERE news_id IN ({$_in3}) AND language IN (?, 'en')"
+        );
+        $_stmt3->execute(array_merge($_nIds, [$_lang]));
+        foreach ($_stmt3->fetchAll() as $_ntr) {
+            $_newsTrans[$_ntr['news_id']][$_ntr['language']] = $_ntr;
+        }
+    } catch (Throwable $_e) { }
+}
+
 // Hiç aktif blok yoksa varsayılan fallback blokları göster
 if (empty($sections)) {
     $sections = [
         [
             'section_type' => 'hero',
-            'title'        => 'Endüstriyel Kablo Çözümleri',
+            'title'        => t('home_hero_title', 'Industrial Cable Solutions'),
             'content'      => [
                 'eyebrow'     => 'Flexion Industrial',
-                'subtitle'    => 'Yüksek performanslı kablo çözümleri sunan Flexion, zorlu endüstriyel ortamlar için güvenilir altyapı sağlar.',
-                'button_text' => 'Ürünleri İncele',
+                'subtitle'    => t('home_hero_subtitle', 'High-performance cable solutions for demanding industrial environments.'),
+                'button_text' => t('home_hero_btn', 'View Products'),
                 'button_url'  => 'sectors',
             ],
         ],
         [
             'section_type' => 'sectors',
-            'title'        => 'Uygulama Sektörleri',
+            'title'        => t('home_sectors_title', 'Application Sectors'),
             'content'      => [
-                'subtitle' => 'Enerji üretiminden denizciliğe kadar geniş bir uygulama yelpazesi.',
+                'subtitle' => t('home_sectors_subtitle', 'A wide range of applications from energy to marine.'),
             ],
         ],
         [
             'section_type' => 'news',
-            'title'        => 'Güncel Haberler',
+            'title'        => t('home_news_title', 'Latest News'),
             'content'      => ['subtitle' => ''],
         ],
     ];
@@ -91,7 +131,7 @@ if (empty($sections)) {
                                 <img src="<?= e($imgSrc) ?>" alt="" class="img-fluid rounded-3 shadow-lg">
                             <?php else: ?>
                                 <div class="bg-dark bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center" style="min-height:280px;">
-                                    <span class="text-white-50 small">Görsel yükleyin (Admin → Ana Sayfa Blokları)</span>
+                                    <span class="text-white-50 small"><?= e(t('home_upload_image', 'Upload image (Admin → Home Sections)')) ?></span>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -108,22 +148,31 @@ if (empty($sections)) {
                         <h2 class="h3 mb-1"><?= e($section['title'] ?? ($c['title'] ?? 'Uygulama Sektörleri')) ?></h2>
                         <p class="text-muted mb-0 small"><?= e($c['subtitle'] ?? '') ?></p>
                     </div>
-                    <a href="sectors" class="btn btn-outline-secondary btn-sm">Tüm sektörleri gör</a>
+                    <a href="sectors" class="btn btn-outline-secondary btn-sm"><?= e(t('home_btn_view_sectors', 'View All Sectors')) ?></a>
                 </div>
                 <div class="row g-3">
-                    <?php foreach ($categories as $cat): ?>
+                    <?php foreach ($categories as $cat):
+                        $_cLang = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+                        $_cTr   = $_catTrans[$cat['id']][$_cLang]
+                               ?? $_catTrans[$cat['id']]['en']
+                               ?? null;
+                        $_cName  = $_cTr['name']              ?? $cat['name'];
+                        $_cDesc  = $_cTr['short_description'] ?? ($cat['short_description'] ?? '');
+                        $_cSlug  = $_cTr['slug']              ?? ($cat['slug'] ?? '');
+                        $_cHref  = $_cSlug ? '/' . ltrim($_cSlug, '/') : 'category?id=' . $cat['id'];
+                    ?>
                         <div class="col-6 col-md-3">
-                            <a href="category?id=<?= e((string) $cat['id']) ?>" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
+                            <a href="<?= e($_cHref) ?>" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
                                 <?php if (!empty($cat['image'])): ?>
-                                    <img src="<?= e($cat['image']) ?>" class="card-img-top" style="height:140px;object-fit:cover;" alt="<?= e($cat['name']) ?>">
+                                    <img src="<?= e($cat['image']) ?>" class="card-img-top" style="height:140px;object-fit:cover;" alt="<?= e($_cName) ?>">
                                 <?php else: ?>
                                     <div class="bg-secondary-subtle d-flex align-items-center justify-content-center" style="height:140px;">
                                         <i class="bi bi-grid fs-2 text-muted"></i>
                                     </div>
                                 <?php endif; ?>
                                 <div class="card-body py-3">
-                                    <h3 class="h6 mb-1"><?= e($cat['name']) ?></h3>
-                                    <p class="small text-muted mb-0"><?= e($cat['short_description'] ?? '') ?></p>
+                                    <h3 class="h6 mb-1"><?= e($_cName) ?></h3>
+                                    <p class="small text-muted mb-0"><?= e($_cDesc) ?></p>
                                 </div>
                             </a>
                         </div>
@@ -131,7 +180,7 @@ if (empty($sections)) {
                     <?php if (empty($categories)): ?>
                         <div class="col-12">
                             <div class="alert alert-info">
-                                Henüz kategori eklenmemiş. Admin panelinden kategori ekleyebilirsin.
+                                <?= e(t('home_no_categories', 'No categories added yet.')) ?>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -176,25 +225,34 @@ if (empty($sections)) {
                         <h2 class="h3 mb-1"><?= e($section['title'] ?? ($c['title'] ?? 'Güncel Haberler')) ?></h2>
                         <p class="text-muted mb-0 small"><?= e($c['subtitle'] ?? '') ?></p>
                     </div>
-                    <a href="news" class="btn btn-outline-secondary btn-sm">Tüm haberleri gör</a>
+                    <a href="news" class="btn btn-outline-secondary btn-sm"><?= e(t('home_btn_view_news', 'View All News')) ?></a>
                 </div>
                 <div class="row g-3">
-                    <?php foreach ($latestNews as $news): ?>
+                    <?php foreach ($latestNews as $news):
+                        $_nLang = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+                        $_nTr   = $_newsTrans[$news['id']][$_nLang]
+                               ?? $_newsTrans[$news['id']]['en']
+                               ?? null;
+                        $_nTitle   = $_nTr['title']   ?? $news['title'];
+                        $_nSummary = $_nTr['summary']  ?? ($news['summary'] ?? '');
+                        $_nSlug    = $_nTr['slug']    ?? ($news['slug'] ?? '');
+                        $_nHref    = $_nSlug ? '/news/' . ltrim($_nSlug, '/') : 'news?slug=' . urlencode($news['slug'] ?? '');
+                    ?>
                         <div class="col-md-4">
-                            <a href="news?slug=<?= e($news['slug']) ?>" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
+                            <a href="<?= e($_nHref) ?>" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
                                 <?php if (!empty($news['image'])): ?>
-                                    <img src="<?= e($news['image']) ?>" class="card-img-top" style="height:180px;object-fit:cover;" alt="<?= e($news['title']) ?>">
+                                    <img src="<?= e($news['image']) ?>" class="card-img-top" style="height:180px;object-fit:cover;" alt="<?= e($_nTitle) ?>">
                                 <?php endif; ?>
                                 <div class="card-body">
-                                    <h3 class="h6 mb-2"><?= e($news['title']) ?></h3>
-                                    <p class="small text-muted mb-0"><?= e($news['summary'] ?? '') ?></p>
+                                    <h3 class="h6 mb-2"><?= e($_nTitle) ?></h3>
+                                    <p class="small text-muted mb-0"><?= e($_nSummary) ?></p>
                                 </div>
                             </a>
                         </div>
                     <?php endforeach; ?>
                     <?php if (empty($latestNews)): ?>
                         <div class="col-12">
-                            <p class="text-muted small">Henüz haber eklenmemiş.</p>
+                            <p class="text-muted small"><?= e(t('home_no_news', 'No news added yet.')) ?></p>
                         </div>
                     <?php endif; ?>
                 </div>

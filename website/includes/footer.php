@@ -3,17 +3,16 @@
 require_once __DIR__ . '/functions.php';
 
 $companyName = get_setting('company_name', 'Flexion Industrial');
-$address     = get_setting('company_address', 'Adres bilgisi');
-$email       = get_setting('contact_email', 'info@example.com');
-$phone       = get_setting('contact_phone', '+90 ... ... .. ..');
-$footerText  = get_setting('footer_text', 'All rights reserved.');
+$address     = get_setting('company_address', '');
+$email       = get_setting('contact_email', '');
+$phone       = get_setting('contact_phone', '');
 $linkedin    = get_setting('social_linkedin', '');
 $youtube     = get_setting('social_youtube', '');
 $logoPath    = get_setting('logo_path', '');
-$siteTitle   = get_setting('site_title', 'Flexion Industrial');
+$siteTitle   = t('site_title', get_setting('site_title', 'Flexion Industrial'));
 $logoHeight  = max(20, min(120, (int) get_setting('logo_height', '36')));
 
-// Footer linkleri - column_key'e göre grupla
+// Footer linkleri - column_key'e göre grupla, çevirileri de al
 $footerLinksRaw = [];
 try {
     $pdo = db();
@@ -23,13 +22,43 @@ try {
     // footer_links tablosu henüz yoksa sessizce geç
 }
 
+// footer_link_translations çevirilerini al
+$_footerLinkTrans = [];
+if (!empty($footerLinksRaw)) {
+    $lang = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+    try {
+        $pdo2 = db();
+        $ids  = array_column($footerLinksRaw, 'id');
+        $in   = implode(',', array_fill(0, count($ids), '?'));
+        $stmt2 = $pdo2->prepare(
+            "SELECT footer_link_id, language, title
+             FROM footer_link_translations
+             WHERE footer_link_id IN ({$in}) AND language IN (?, 'en')"
+        );
+        $stmt2->execute(array_merge($ids, [$lang]));
+        foreach ($stmt2->fetchAll() as $flt) {
+            $_footerLinkTrans[$flt['footer_link_id']][$flt['language']] = $flt['title'];
+        }
+    } catch (Throwable $e) {
+        // tablosu yoksa sessizce devam et
+    }
+}
+
 $footerCols = [];
 foreach ($footerLinksRaw as $fl) {
-    $key = $fl['column_key'];
-    if (!isset($footerCols[$key])) {
-        $footerCols[$key] = ['label' => $fl['column_label'] ?: $key, 'links' => []];
+    $colKey = $fl['column_key'];
+    if (!isset($footerCols[$colKey])) {
+        // Sütun başlığı: site_translations'dan al, yoksa column_label
+        $colLabel = t('footer_col_' . $colKey, $fl['column_label'] ?: $colKey);
+        $footerCols[$colKey] = ['label' => $colLabel, 'links' => []];
     }
-    $footerCols[$key]['links'][] = $fl;
+    // Link başlığını çevir
+    $lang = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+    $flTitle = $_footerLinkTrans[$fl['id']][$lang]
+            ?? $_footerLinkTrans[$fl['id']]['en']
+            ?? $fl['title'];
+    $fl['title'] = $flTitle;
+    $footerCols[$colKey]['links'][] = $fl;
 }
 ?>
 </main>
@@ -76,28 +105,12 @@ foreach ($footerLinksRaw as $fl) {
                         </ul>
                     </div>
                 <?php endforeach; ?>
-            <?php else: ?>
-                <!-- Varsayılan statik sütunlar (footer_links tablosu boşken) -->
-                <div class="col-6 col-md-2 col-lg-2">
-                    <h6 class="text-white mb-3 fw-semibold">Kurumsal</h6>
-                    <ul class="list-unstyled small">
-                        <li class="mb-1"><a href="/hakkimizda" class="fx-footer-link">Hakkımızda</a></li>
-                        <li class="mb-1"><a href="/iletisim" class="fx-footer-link">İletişim</a></li>
-                    </ul>
-                </div>
-                <div class="col-6 col-md-2 col-lg-2">
-                    <h6 class="text-white mb-3 fw-semibold">Ürünler</h6>
-                    <ul class="list-unstyled small">
-                        <li class="mb-1"><a href="/sectors" class="fx-footer-link">Tüm Ürünler</a></li>
-                        <li class="mb-1"><a href="/news" class="fx-footer-link">Haberler</a></li>
-                    </ul>
-                </div>
             <?php endif; ?>
 
             <!-- Sosyal medya / İletişim -->
             <div class="col-md-3 col-lg-3 ms-lg-auto">
                 <?php if ($linkedin || $youtube): ?>
-                    <h6 class="text-white mb-3 fw-semibold">Sosyal Medya</h6>
+                    <h6 class="text-white mb-3 fw-semibold"><?= e(t('footer_social_title', 'Social Media')) ?></h6>
                     <div class="d-flex gap-3 mb-3">
                         <?php if ($linkedin): ?>
                             <a href="<?= e($linkedin) ?>" target="_blank" rel="noopener" title="LinkedIn">
@@ -111,14 +124,17 @@ foreach ($footerLinksRaw as $fl) {
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
-                <p class="small mb-0">
-                    <?= e(get_setting('newsletter_text', 'Yeni ürün ve projelerden haberdar olmak için bültenimize abone olun.')) ?>
-                </p>
+                <?php $newsletterText = t('footer_newsletter_label', get_setting('newsletter_text', '')); ?>
+                <?php if ($newsletterText): ?>
+                <p class="small mb-0"><?= e($newsletterText) ?></p>
+                <?php endif; ?>
             </div>
         </div>
 
         <div class="fx-footer-bottom d-flex flex-column flex-sm-row justify-content-sm-between align-items-center gap-2">
-            <span class="small text-white"><?= e($footerText) ?></span>
+            <span class="small text-white">
+                &copy; <?= date('Y') ?> <?= e($companyName) ?> &mdash; <?= e(t('footer_rights', 'All rights reserved.')) ?>
+            </span>
             <span class="small text-white">
                 Powered by <a href="https://kesicioglu.com" target="_blank" rel="noopener" class="fw-bold text-white text-decoration-none">Kesicioglu</a>
             </span>
@@ -191,15 +207,15 @@ foreach ($footerLinksRaw as $fl) {
 }());
 </script>
 <!-- ========== Çerez Onay Banner'ı ========== -->
-<div id="fx-cookie-banner" class="fx-cookie-banner" role="dialog" aria-label="Çerez bildirimi" aria-live="polite">
+<div id="fx-cookie-banner" class="fx-cookie-banner" role="dialog" aria-label="Cookie notice" aria-live="polite">
     <div class="fx-cookie-inner">
         <p class="fx-cookie-text small mb-0">
-            Bu web sitesi en iyi deneyimi sunmak için çerezler kullanmaktadır.
-            Devam ederek <a href="/page/privacy-policy" class="fw-semibold text-white">Gizlilik Politikası</a>'mızı kabul etmiş olursunuz.
+            <?= e(t('cookie_message', 'This website uses cookies to provide the best experience.')) ?>
+            <a href="/page/privacy-policy" class="fw-semibold text-white"><?= e(t('cookie_policy_link', 'Privacy Policy')) ?></a>
         </p>
         <div class="fx-cookie-actions">
-            <button id="fx-cookie-accept" class="btn btn-sm btn-light fw-semibold px-3">Kabul Et</button>
-            <button id="fx-cookie-reject" class="btn btn-sm btn-outline-light px-3">Reddet</button>
+            <button id="fx-cookie-accept" class="btn btn-sm btn-light fw-semibold px-3"><?= e(t('cookie_accept', 'Accept')) ?></button>
+            <button id="fx-cookie-reject" class="btn btn-sm btn-outline-light px-3"><?= e(t('cookie_reject', 'Decline')) ?></button>
         </div>
     </div>
 </div>

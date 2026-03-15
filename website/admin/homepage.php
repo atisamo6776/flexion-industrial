@@ -96,6 +96,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Blok kaydedilemedi. Lütfen <a href="migrate.php">migrasyonu</a> kontrol edin.';
                 }
             }
+        } elseif (isset($_POST['save_section_translation'])) {
+            $sectionId = (int) ($_POST['section_id'] ?? 0);
+            $lang      = trim($_POST['translation_lang'] ?? '');
+            $SUPPORTED = ['en', 'de', 'it', 'fr'];
+            if ($sectionId > 0 && in_array($lang, $SUPPORTED, true)) {
+                $trTitle   = trim($_POST['tr_title'] ?? '');
+                $trContent = [
+                    'eyebrow'     => trim($_POST['tr_eyebrow'] ?? '') ?: null,
+                    'subtitle'    => trim($_POST['tr_subtitle'] ?? '') ?: null,
+                    'button_text' => trim($_POST['tr_button_text'] ?? '') ?: null,
+                    'button_url'  => trim($_POST['tr_button_url'] ?? '') ?: null,
+                    'text'        => trim($_POST['tr_text'] ?? '') ?: null,
+                ];
+                $trJson = json_encode($trContent, JSON_UNESCAPED_UNICODE);
+                try {
+                    $pdo->prepare(
+                        'INSERT INTO home_section_translations (section_id, language, title, content_json)
+                         VALUES (:sid, :lang, :title, :content)
+                         ON DUPLICATE KEY UPDATE title = VALUES(title), content_json = VALUES(content_json)'
+                    )->execute([
+                        ':sid'     => $sectionId,
+                        ':lang'    => $lang,
+                        ':title'   => $trTitle,
+                        ':content' => $trJson,
+                    ]);
+                    $success = ucfirst($lang) . ' çevirisi kaydedildi.';
+                } catch (Throwable $e) {
+                    error_log('[homepage.php save_section_translation] ' . $e->getMessage());
+                    $error = 'Çeviri kaydedilemedi.';
+                }
+            }
         } elseif (isset($_POST['delete_section'])) {
             $id = (int) ($_POST['id'] ?? 0);
             if ($id > 0) {
@@ -383,6 +414,84 @@ include __DIR__ . '/partials_header.php';
                         <a href="homepage.php" class="btn btn-link">İptal</a>
                     <?php endif; ?>
                 </form>
+
+                <?php if ($editSection): ?>
+                <!-- Dil Çevirileri -->
+                <hr>
+                <h6 class="fw-semibold mb-3">Dil Çevirileri</h6>
+                <?php
+                $LANGS = ['en' => 'English', 'de' => 'Deutsch', 'it' => 'Italiano', 'fr' => 'Français'];
+                $sectionTranslations = [];
+                try {
+                    $stTrStmt = $pdo->prepare('SELECT * FROM home_section_translations WHERE section_id = ?');
+                    $stTrStmt->execute([$editSection['id']]);
+                    foreach ($stTrStmt->fetchAll() as $stTr) {
+                        $sectionTranslations[$stTr['language']] = $stTr;
+                    }
+                } catch (Throwable $e) {}
+                ?>
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <?php $first = true; foreach ($LANGS as $lCode => $lLabel): ?>
+                    <li class="nav-item">
+                        <button class="nav-link <?= $first ? 'active' : '' ?>"
+                                data-bs-toggle="tab"
+                                data-bs-target="#hs-tr-<?= $lCode ?>"
+                                type="button"><?= $lLabel ?>
+                            <?php if (isset($sectionTranslations[$lCode])): ?>
+                                <span class="badge bg-success ms-1" style="font-size:.6rem;">✓</span>
+                            <?php endif; ?>
+                        </button>
+                    </li>
+                    <?php $first = false; endforeach; ?>
+                </ul>
+                <div class="tab-content">
+                    <?php $first = true; foreach ($LANGS as $lCode => $lLabel): ?>
+                    <?php
+                    $stTr      = $sectionTranslations[$lCode] ?? [];
+                    $stTrCont  = isset($stTr['content_json']) ? (json_decode($stTr['content_json'], true) ?? []) : [];
+                    ?>
+                    <div class="tab-pane fade <?= $first ? 'show active' : '' ?>" id="hs-tr-<?= $lCode ?>">
+                        <form method="post">
+                            <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
+                            <input type="hidden" name="save_section_translation" value="1">
+                            <input type="hidden" name="section_id" value="<?= e((string)$editSection['id']) ?>">
+                            <input type="hidden" name="translation_lang" value="<?= e($lCode) ?>">
+                            <div class="mb-2">
+                                <label class="form-label form-label-sm">Başlık</label>
+                                <input type="text" name="tr_title" class="form-control form-control-sm"
+                                       value="<?= e($stTr['title'] ?? '') ?>">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label form-label-sm">Üst Küçük Başlık (eyebrow)</label>
+                                <input type="text" name="tr_eyebrow" class="form-control form-control-sm"
+                                       value="<?= e($stTrCont['eyebrow'] ?? '') ?>">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label form-label-sm">Alt Başlık</label>
+                                <textarea name="tr_subtitle" class="form-control form-control-sm" rows="2"><?= e($stTrCont['subtitle'] ?? '') ?></textarea>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label form-label-sm">Metin (text_image için)</label>
+                                <textarea name="tr_text" class="form-control form-control-sm" rows="2"><?= e($stTrCont['text'] ?? '') ?></textarea>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label form-label-sm">Buton Metni</label>
+                                    <input type="text" name="tr_button_text" class="form-control form-control-sm"
+                                           value="<?= e($stTrCont['button_text'] ?? '') ?>">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label form-label-sm">Buton Linki</label>
+                                    <input type="text" name="tr_button_url" class="form-control form-control-sm"
+                                           value="<?= e($stTrCont['button_url'] ?? '') ?>">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary"><?= e($lLabel) ?> Kaydet</button>
+                        </form>
+                    </div>
+                    <?php $first = false; endforeach; ?>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

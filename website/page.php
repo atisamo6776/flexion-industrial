@@ -114,7 +114,7 @@ require_once __DIR__ . '/includes/header.php';
 // 404 — Slug yok
 if (!$slug) {
     http_response_code(404);
-    echo '<div class="container py-5"><h1 class="h3">Sayfa bulunamadı</h1></div>';
+    echo '<div class="container py-5"><h1 class="h3">' . e(t('404_title', 'Page Not Found')) . '</h1></div>';
     require_once __DIR__ . '/includes/footer.php';
     exit;
 }
@@ -124,9 +124,9 @@ if (!$page) {
     http_response_code(404);
     ?>
     <div class="container py-5">
-        <h1 class="h3 mb-3">Sayfa bulunamadı</h1>
-        <p class="text-muted">Aradığınız sayfa sistemde yer almıyor veya pasif durumda.</p>
-        <a href="index" class="btn btn-outline-secondary btn-sm">Ana sayfaya dön</a>
+        <h1 class="h3 mb-3"><?= e(t('404_title', 'Page Not Found')) ?></h1>
+        <p class="text-muted"><?= e(t('404_desc', 'The page you are looking for does not exist or is inactive.')) ?></p>
+        <a href="/" class="btn btn-outline-secondary btn-sm"><?= e(t('404_back', 'Back to homepage')) ?></a>
     </div>
     <?php
     require_once __DIR__ . '/includes/footer.php';
@@ -202,7 +202,7 @@ $textAlignClass = $textAlignMap[$bTitlePos] ?? 'text-center';
                     <div class="d-flex align-items-center gap-3">
                         <div class="fx-contact-icon"><i class="bi bi-telephone-fill"></i></div>
                         <div>
-                            <div class="small text-muted fw-semibold text-uppercase">Telefon</div>
+                            <div class="small text-muted fw-semibold text-uppercase"><?= e(t('form_phone', 'Phone')) ?></div>
                             <a href="tel:<?= e(preg_replace('/\s+/', '', $cPhone)) ?>"
                                class="text-decoration-none fw-semibold"><?= e($cPhone) ?></a>
                         </div>
@@ -212,7 +212,7 @@ $textAlignClass = $textAlignMap[$bTitlePos] ?? 'text-center';
                     <div class="d-flex align-items-center gap-3">
                         <div class="fx-contact-icon"><i class="bi bi-envelope-fill"></i></div>
                         <div>
-                            <div class="small text-muted fw-semibold text-uppercase">E-posta</div>
+                            <div class="small text-muted fw-semibold text-uppercase"><?= e(t('form_email', 'E-mail')) ?></div>
                             <a href="mailto:<?= e($cEmail) ?>"
                                class="text-decoration-none fw-semibold"><?= e($cEmail) ?></a>
                         </div>
@@ -222,7 +222,7 @@ $textAlignClass = $textAlignMap[$bTitlePos] ?? 'text-center';
                     <div class="d-flex align-items-center gap-3">
                         <div class="fx-contact-icon"><i class="bi bi-geo-alt-fill"></i></div>
                         <div>
-                            <div class="small text-muted fw-semibold text-uppercase">Adres</div>
+                            <div class="small text-muted fw-semibold text-uppercase"><?= e(t('contact_address_label', 'Address')) ?></div>
                             <span><?= e($cAddress) ?></span>
                         </div>
                     </div>
@@ -235,56 +235,55 @@ $textAlignClass = $textAlignMap[$bTitlePos] ?? 'text-center';
                     <div class="mb-3">
                         <span style="font-size:3.5rem;color:#e61421;"><i class="bi bi-check-circle-fill"></i></span>
                     </div>
-                    <h2 class="h4 mb-2">Mesajınız alındı!</h2>
-                    <p class="text-muted">En kısa sürede size dönüş yapacağız.</p>
-                    <a href="/iletisim" class="btn btn-outline-secondary btn-sm mt-2">Yeni mesaj gönder</a>
+                    <h2 class="h4 mb-2"><?= e(t('form_success_title', 'Message received!')) ?></h2>
+                    <p class="text-muted"><?= e(t('form_contact_success', 'Your message has been sent. We will contact you shortly.')) ?></p>
+                    <a href="<?= e($slug) ?>" class="btn btn-outline-secondary btn-sm mt-2"><?= e(t('form_send_new', 'Send a new message')) ?></a>
                 </div>
                 <?php else: ?>
                 <div class="fx-contact-form-wrap">
-                    <h2 class="h5 mb-4">Bize Yazın</h2>
+                    <h2 class="h5 mb-4"><?= e(t('contact_form_title', 'Write to Us')) ?></h2>
                     <?php if ($formError): ?>
                         <div class="alert alert-danger py-2 small"><?= e($formError) ?></div>
                     <?php endif; ?>
                     <form method="post">
                         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                        <!-- Honeypot: botlar doldurur, gerçek kullanıcılar görmez -->
                         <div style="display:none;" aria-hidden="true">
                             <input type="text" name="website_url" tabindex="-1" autocomplete="off" value="">
                         </div>
                         <div class="row g-3">
                             <div class="col-sm-6">
-                                <label class="form-label">Ad <span class="text-danger">*</span></label>
+                                <label class="form-label"><?= e(t('form_name', 'Name')) ?> <span class="text-danger">*</span></label>
                                 <input type="text" name="contact_name" class="form-control"
                                        value="<?= e($_POST['contact_name'] ?? '') ?>" required>
                             </div>
                             <div class="col-sm-6">
-                                <label class="form-label">Soyad</label>
+                                <label class="form-label"><?= e(t('form_surname', 'Surname')) ?></label>
                                 <input type="text" name="contact_surname" class="form-control"
                                        value="<?= e($_POST['contact_surname'] ?? '') ?>">
                             </div>
                             <div class="col-sm-6">
-                                <label class="form-label">E-posta <span class="text-danger">*</span></label>
+                                <label class="form-label"><?= e(t('form_email', 'E-mail')) ?> <span class="text-danger">*</span></label>
                                 <input type="email" name="contact_email" class="form-control"
                                        value="<?= e($_POST['contact_email'] ?? '') ?>" required>
                             </div>
                             <div class="col-sm-6">
-                                <label class="form-label">Telefon</label>
+                                <label class="form-label"><?= e(t('form_phone', 'Phone')) ?></label>
                                 <input type="tel" name="contact_phone" class="form-control"
                                        value="<?= e($_POST['contact_phone'] ?? '') ?>">
                             </div>
                             <div class="col-12">
-                                <label class="form-label">Şirket</label>
+                                <label class="form-label"><?= e(t('form_company', 'Company')) ?></label>
                                 <input type="text" name="contact_company" class="form-control"
                                        value="<?= e($_POST['contact_company'] ?? '') ?>">
                             </div>
                             <div class="col-12">
-                                <label class="form-label">Mesaj <span class="text-danger">*</span></label>
+                                <label class="form-label"><?= e(t('form_message', 'Message')) ?> <span class="text-danger">*</span></label>
                                 <textarea name="contact_message" class="form-control" rows="5" required><?= e($_POST['contact_message'] ?? '') ?></textarea>
                             </div>
                             <div class="col-12">
                                 <button type="submit" name="contact_submit" value="1"
                                         class="btn btn-primary px-5">
-                                    <i class="bi bi-send me-2"></i>Gönder
+                                    <i class="bi bi-send me-2"></i><?= e(t('btn_submit', 'Send')) ?>
                                 </button>
                             </div>
                         </div>

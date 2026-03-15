@@ -54,9 +54,9 @@ if (!$category) {
     http_response_code(404);
     ?>
     <div class="container py-5">
-        <h1 class="h3 mb-3">Kategori bulunamadı</h1>
-        <p class="text-muted">Aradığınız kategori sistemde yer almıyor veya pasif durumda.</p>
-        <a href="sectors" class="btn btn-outline-secondary btn-sm">Tüm sektörlere dön</a>
+        <h1 class="h3 mb-3"><?= e(t('cat_not_found', 'Category not found')) ?></h1>
+        <p class="text-muted"><?= e(t('cat_not_found_desc', 'The category you are looking for does not exist or is inactive.')) ?></p>
+        <a href="sectors" class="btn btn-outline-secondary btn-sm"><?= e(t('cat_back_sectors', 'Back to all sectors')) ?></a>
     </div>
     <?php
     require_once __DIR__ . '/includes/footer.php';
@@ -120,18 +120,18 @@ try {
                         <?php endif; ?>
                     </div>
                     <div class="d-flex flex-column align-items-end gap-2">
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Sıralama">
+                        <div class="btn-group btn-group-sm" role="group">
                             <a href="category?id=<?= e((string)$categoryId) ?>&sort=relevance"
                                class="btn btn-outline-secondary <?= $sort === 'relevance' ? 'active' : '' ?>">
-                                Varsayılan
+                                <?= e(t('cat_sort_relevance', 'Relevance')) ?>
                             </a>
                             <a href="category?id=<?= e((string)$categoryId) ?>&sort=az"
                                class="btn btn-outline-secondary <?= $sort === 'az' ? 'active' : '' ?>">
-                                İsim A-Z
+                                <?= e(t('cat_sort_az', 'A–Z')) ?>
                             </a>
                             <a href="category?id=<?= e((string)$categoryId) ?>&sort=za"
                                class="btn btn-outline-secondary <?= $sort === 'za' ? 'active' : '' ?>">
-                                İsim Z-A
+                                <?= e(t('cat_sort_za', 'Z–A')) ?>
                             </a>
                         </div>
                     </div>
@@ -150,7 +150,7 @@ try {
                                 <div class="card-body py-3">
                                     <h2 class="h6 mb-1"><?= e($product['name']) ?></h2>
                                     <?php if (!empty($product['code'])): ?>
-                                        <p class="small text-muted mb-1">Kod: <?= e($product['code']) ?></p>
+                                        <p class="small text-muted mb-1"><?= e(t('prod_code_label', 'Code')) ?>: <?= e($product['code']) ?></p>
                                     <?php endif; ?>
                                     <p class="small text-muted mb-0"><?= e($product['short_description'] ?? '') ?></p>
                                 </div>
@@ -161,7 +161,7 @@ try {
                     <?php if (empty($products)): ?>
                         <div class="col-12">
                             <div class="alert alert-info">
-                                Bu kategoriye henüz ürün eklenmemiş.
+                                <?= e(t('cat_no_products', 'No products found in this category.')) ?>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -174,7 +174,7 @@ try {
                             $baseUrl = 'category?id=' . urlencode((string) $categoryId) . '&sort=' . urlencode($sort) . '&page=';
                             ?>
                             <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                                <a class="page-link" href="<?= $page <= 1 ? '#' : $baseUrl . ($page - 1) ?>">Önceki</a>
+                                <a class="page-link" href="<?= $page <= 1 ? '#' : $baseUrl . ($page - 1) ?>"><?= e(t('pagination_prev', 'Previous')) ?></a>
                             </li>
                             <?php for ($p = 1; $p <= $maxPage; $p++): ?>
                                 <li class="page-item <?= $p === $page ? 'active' : '' ?>">
@@ -182,7 +182,7 @@ try {
                                 </li>
                             <?php endfor; ?>
                             <li class="page-item <?= $page >= $maxPage ? 'disabled' : '' ?>">
-                                <a class="page-link" href="<?= $page >= $maxPage ? '#' : $baseUrl . ($page + 1) ?>">Sonraki</a>
+                                <a class="page-link" href="<?= $page >= $maxPage ? '#' : $baseUrl . ($page + 1) ?>"><?= e(t('pagination_next', 'Next')) ?></a>
                             </li>
                         </ul>
                     </nav>

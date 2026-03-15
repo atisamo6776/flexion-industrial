@@ -3,8 +3,8 @@
 require_once __DIR__ . '/i18n.php';
 require_once __DIR__ . '/functions.php';
 
-$siteTitle   = get_setting('site_title', 'Flexion Industrial');
-$topbarText  = get_setting('topbar_text', 'Industrial rubber and cable solutions');
+$siteTitle   = t('site_title', get_setting('site_title', 'Flexion Industrial'));
+$topbarText  = t('topbar_text', get_setting('topbar_text', 'Industrial rubber and cable solutions'));
 $logoPath    = get_setting('logo_path', '');
 $logoHeight  = max(20, min(120, (int) get_setting('logo_height', '36')));
 $menu        = get_main_menu();
@@ -34,11 +34,11 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($siteTitle) ?></title>
-    <meta name="description" content="<?= e(get_setting('meta_description', 'Flexion industrial hose and cable solutions')) ?>">
+    <meta name="description" content="<?= e(t('meta_description', get_setting('meta_description', 'Flexion industrial hose and cable solutions'))) ?>">
     <!-- Open Graph / Social sharing -->
     <meta property="og:type"        content="website">
     <meta property="og:title"       content="<?= e($siteTitle) ?>">
-    <meta property="og:description" content="<?= e(get_setting('meta_description', 'Flexion industrial hose and cable solutions')) ?>">
+    <meta property="og:description" content="<?= e(t('meta_description', get_setting('meta_description', 'Flexion industrial hose and cable solutions'))) ?>">
     <meta property="og:url"         content="<?= e((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . ($_SERVER['REQUEST_URI'] ?? '/')) ?>">
     <?php $ogImage = get_setting('og_image', ''); if ($ogImage): ?>
     <meta property="og:image"       content="<?= e($ogImage) ?>">
@@ -123,7 +123,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
 
             <!-- Arama formu -->
             <form action="search" method="get" class="d-flex ms-lg-3 mt-2 mt-lg-0">
-                <input type="search" name="q" class="form-control form-control-sm" placeholder="Ürün ara...">
+                <input type="search" name="q" class="form-control form-control-sm" placeholder="<?= e(t('search_placeholder', 'Search products...')) ?>">
                 <button class="btn btn-sm btn-primary ms-1" type="submit">
                     <i class="bi bi-search"></i>
                 </button>

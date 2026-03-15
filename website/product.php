@@ -118,9 +118,9 @@ if (!$product) {
     http_response_code(404);
     ?>
     <div class="container py-5">
-        <h1 class="h3 mb-3">Ürün bulunamadı</h1>
-        <p class="text-muted">Aradığınız ürün sistemde yer almıyor veya pasif durumda.</p>
-        <a href="sectors" class="btn btn-outline-secondary btn-sm">Ürünlere dön</a>
+        <h1 class="h3 mb-3"><?= e(t('prod_not_found', 'Product not found')) ?></h1>
+        <p class="text-muted"><?= e(t('prod_not_found_desc', 'The product you are looking for does not exist or is inactive.')) ?></p>
+        <a href="sectors" class="btn btn-outline-secondary btn-sm"><?= e(t('prod_back', 'Back to products')) ?></a>
     </div>
     <?php
     require_once __DIR__ . '/includes/footer.php';
@@ -194,8 +194,8 @@ try {
         <!-- Breadcrumb -->
         <nav class="mb-4" aria-label="breadcrumb">
             <ol class="breadcrumb small">
-                <li class="breadcrumb-item"><a href="/">Ana Sayfa</a></li>
-                <li class="breadcrumb-item"><a href="sectors">Ürünler</a></li>
+                <li class="breadcrumb-item"><a href="/"><?= e(t('nav_home', 'Home')) ?></a></li>
+                <li class="breadcrumb-item"><a href="sectors"><?= e(t('nav_products', 'Products')) ?></a></li>
                 <li class="breadcrumb-item">
                     <a href="category?id=<?= e((string)$product['category_id']) ?>"><?= e($product['category_name']) ?></a>
                 </li>
@@ -243,7 +243,7 @@ try {
                 <?php if ($regulations): ?>
                     <div class="mt-4 pt-3 border-top">
                         <p class="small text-uppercase text-muted fw-semibold mb-2" style="font-size:.72rem;letter-spacing:.06em;">
-                            Regülasyonlar &amp; Sertifikalar
+                            <?= e(t('prod_regs_title', 'Regulations &amp; Certifications')) ?>
                         </p>
                         <div class="d-flex flex-wrap gap-2">
                             <?php foreach ($regulations as $reg): ?>
@@ -271,7 +271,7 @@ try {
                 <h1 class="h2 fw-bold mb-1"><?= e($product['name']) ?></h1>
 
                 <?php if (!empty($product['code'])): ?>
-                    <p class="small text-muted mb-3">Ürün kodu: <strong><?= e($product['code']) ?></strong></p>
+                    <p class="small text-muted mb-3"><?= e(t('prod_code_label', 'Product code')) ?>: <strong><?= e($product['code']) ?></strong></p>
                 <?php endif; ?>
 
                 <?php if (!empty($product['short_description'])): ?>
@@ -298,10 +298,10 @@ try {
                     </div>
                 <?php endif; ?>
 
-                <!-- Bilgi Al Butonu — tam genişlik, kırmızı (referans: Request Information) -->
+                <!-- Bilgi Al Butonu -->
                 <button type="button" class="btn btn-primary w-100 py-2 mt-2"
                         data-bs-toggle="modal" data-bs-target="#inquiryModal">
-                    <i class="bi bi-envelope me-2"></i>Bilgi Al
+                    <i class="bi bi-envelope me-2"></i><?= e(t('prod_inquiry_title', 'Request Information')) ?>
                 </button>
             </div>
         </div>
@@ -310,7 +310,7 @@ try {
         <?php if ($specTables): ?>
         <div class="row mb-5">
             <div class="col-12">
-                <h2 class="h5 mb-3 pb-2 border-bottom">Teknik Özellikler</h2>
+                <h2 class="h5 mb-3 pb-2 border-bottom"><?= e(t('prod_spec_title', 'Technical Specifications')) ?></h2>
             </div>
             <?php foreach ($specTables as $table): ?>
                 <div class="col-12 mb-4">
@@ -346,7 +346,7 @@ try {
         <?php if ($relatedProducts): ?>
         <div class="row mb-4">
             <div class="col-12 mb-3">
-                <h2 class="h5">Benzer Ürünler</h2>
+                <h2 class="h5"><?= e(t('prod_related', 'Related Products')) ?></h2>
             </div>
             <?php foreach ($relatedProducts as $rp): ?>
                 <div class="col-md-4 fx-animate">
@@ -381,7 +381,7 @@ try {
         <div class="modal-content border-0 shadow">
             <div class="modal-header">
                 <h5 class="modal-title" id="inquiryModalLabel">
-                    <i class="bi bi-envelope me-2"></i>Bilgi Talebi — <?= e($product['name']) ?>
+                    <i class="bi bi-envelope me-2"></i><?= e(t('prod_inquiry_title', 'Request Information')) ?> — <?= e($product['name']) ?>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -389,9 +389,9 @@ try {
                 <?php if ($inquirySent): ?>
                     <div class="fx-success-anim text-center py-4">
                         <span style="font-size:3.5rem;color:#e61421;"><i class="bi bi-check-circle-fill"></i></span>
-                        <h2 class="h5 mt-3 mb-2">Talebiniz alındı!</h2>
-                        <p class="text-muted">En kısa sürede size dönüş yapacağız.</p>
-                        <button class="btn btn-outline-secondary btn-sm mt-2" data-bs-dismiss="modal">Kapat</button>
+                        <h2 class="h5 mt-3 mb-2"><?= e(t('form_success_title', 'Request received!')) ?></h2>
+                        <p class="text-muted"><?= e(t('prod_inquiry_sent', 'Your request has been received. We will contact you shortly.')) ?></p>
+                        <button class="btn btn-outline-secondary btn-sm mt-2" data-bs-dismiss="modal"><?= e(t('btn_close', 'Close')) ?></button>
                     </div>
                 <?php elseif ($inquiryError): ?>
                     <div class="alert alert-danger py-2 small"><?= e($inquiryError) ?></div>
@@ -409,47 +409,38 @@ try {
                     </div>
                     <div class="row g-3">
                         <div class="col-sm-6">
-                            <label class="form-label">Ad <span class="text-danger">*</span></label>
+                            <label class="form-label"><?= e(t('form_name', 'Name')) ?> <span class="text-danger">*</span></label>
                             <input type="text" name="inq_name" class="form-control" required>
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label">Soyad</label>
+                            <label class="form-label"><?= e(t('form_surname', 'Surname')) ?></label>
                             <input type="text" name="inq_surname" class="form-control">
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label">E-posta <span class="text-danger">*</span></label>
+                            <label class="form-label"><?= e(t('form_email', 'E-mail')) ?> <span class="text-danger">*</span></label>
                             <input type="email" name="inq_email" class="form-control" required>
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label">Telefon</label>
+                            <label class="form-label"><?= e(t('form_phone', 'Phone')) ?></label>
                             <input type="tel" name="inq_phone" class="form-control">
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label">Şirket</label>
+                            <label class="form-label"><?= e(t('form_company', 'Company')) ?></label>
                             <input type="text" name="inq_company" class="form-control">
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label">Ülke</label>
+                            <label class="form-label"><?= e(t('form_country', 'Country')) ?></label>
                             <input type="text" name="inq_country" class="form-control">
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Mesaj <span class="text-danger">*</span></label>
-                            <textarea name="inq_message" class="form-control" rows="4" required
-                                      placeholder="Bilgi almak istediğiniz konuyu yazın..."></textarea>
-                        </div>
-                        <div class="col-12">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="kvkk" required>
-                                <label class="form-check-label small" for="kvkk">
-                                    Kişisel verilerimin işlenmesine ilişkin <a href="page.php?slug=kvkk" target="_blank">KVKK Aydınlatma Metni</a>'ni okudum ve onaylıyorum.
-                                </label>
-                            </div>
+                            <label class="form-label"><?= e(t('form_message', 'Message')) ?> <span class="text-danger">*</span></label>
+                            <textarea name="inq_message" class="form-control" rows="4" required></textarea>
                         </div>
                     </div>
                     <div class="modal-footer px-0 pb-0 mt-3">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?= e(t('btn_cancel', 'Cancel')) ?></button>
                         <button type="submit" class="btn btn-primary px-5">
-                            <i class="bi bi-send me-2"></i>Gönder
+                            <i class="bi bi-send me-2"></i><?= e(t('btn_submit', 'Send')) ?>
                         </button>
                     </div>
                 </form>
