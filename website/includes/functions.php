@@ -229,6 +229,133 @@ function get_main_menu(): array
 }
 
 /**
+ * Mevcut sayfanın slug'ını hedef dile çevirerek URL döndürür.
+ * Kategori / sayfa slug'larını DB'den çevirir.
+ * Ürünlerde slug sabittir → sadece prefix değişir.
+ */
+function smart_lang_switch_url(string $lang): string
+{
+    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+
+    // Mevcut dil prefix'ini soy
+    if (defined('SUPPORTED_LANGS') && defined('DEFAULT_LANG')) {
+        foreach (SUPPORTED_LANGS as $l) {
+            if ($l !== DEFAULT_LANG && preg_match('#^/' . preg_quote($l, '#') . '(/|$)#', $uri, $m)) {
+                $uri = isset($m[1]) && $m[1] === '/' ? substr($uri, strlen($l) + 1) : '/';
+                break;
+            }
+        }
+    }
+    if ($uri === '' || $uri === false) $uri = '/';
+
+    $prefix = ($lang !== (defined('DEFAULT_LANG') ? DEFAULT_LANG : 'en')) ? '/' . $lang : '';
+
+    // Ana sayfa
+    if ($uri === '/') return $prefix . '/';
+
+    // Çok segmentli URL (eski /cat/prod formatı) — sadece prefix değiştir
+    $parts = explode('/', ltrim($uri, '/'));
+    if (count($parts) > 1) return $prefix . $uri;
+
+    $slug = rawurldecode(trim($parts[0]));
+
+    // Özel: kategoriler listesi slug'ları
+    $categoriesListMap = ['en' => 'categories', 'de' => 'kategorien', 'it' => 'categorie', 'fr' => 'categories'];
+    if (in_array($slug, array_values($categoriesListMap), true)) {
+        return $prefix . '/' . ($categoriesListMap[$lang] ?? 'categories');
+    }
+
+    try {
+        $pdo = db();
+
+        // ── Kategori: önce çeviri tablosunda ara, sonra ana tabloda
+        $stmt = $pdo->prepare('SELECT category_id FROM category_translations WHERE slug = ? LIMIT 1');
+        $stmt->execute([$slug]);
+        $catId = $stmt->fetchColumn();
+        if (!$catId) {
+            $stmt2 = $pdo->prepare('SELECT id FROM categories WHERE slug = ? AND is_active = 1 LIMIT 1');
+            $stmt2->execute([$slug]);
+            $catId = $stmt2->fetchColumn();
+        }
+        if ($catId) {
+            $stmt3 = $pdo->prepare('SELECT slug FROM category_translations WHERE category_id = ? AND language = ? LIMIT 1');
+            $stmt3->execute([$catId, $lang]);
+            $targetSlug = $stmt3->fetchColumn() ?: null;
+            if (!$targetSlug) {
+                $stmt4 = $pdo->prepare('SELECT slug FROM categories WHERE id = ? LIMIT 1');
+                $stmt4->execute([$catId]);
+                $targetSlug = $stmt4->fetchColumn() ?: null;
+            }
+            if ($targetSlug) return $prefix . '/' . rawurlencode($targetSlug);
+        }
+
+        // ── Sayfa: önce çeviri tablosunda ara, sonra ana tabloda
+        $stmt = $pdo->prepare('SELECT page_id FROM page_translations WHERE slug = ? LIMIT 1');
+        $stmt->execute([$slug]);
+        $pageId = $stmt->fetchColumn();
+        if (!$pageId) {
+            $stmt2 = $pdo->prepare('SELECT id FROM pages WHERE slug = ? AND is_active = 1 LIMIT 1');
+            $stmt2->execute([$slug]);
+            $pageId = $stmt2->fetchColumn();
+        }
+        if ($pageId) {
+            $stmt3 = $pdo->prepare('SELECT slug FROM page_translations WHERE page_id = ? AND language = ? LIMIT 1');
+            $stmt3->execute([$pageId, $lang]);
+            $targetSlug = $stmt3->fetchColumn() ?: null;
+            if (!$targetSlug) {
+                $stmt4 = $pdo->prepare('SELECT slug FROM pages WHERE id = ? LIMIT 1');
+                $stmt4->execute([$pageId]);
+                $targetSlug = $stmt4->fetchColumn() ?: null;
+            }
+            if ($targetSlug) return $prefix . '/' . rawurlencode($targetSlug);
+        }
+    } catch (Throwable $e) {
+        error_log('smart_lang_switch_url: ' . $e->getMessage());
+    }
+
+    // Ürün veya bilinmeyen → sadece prefix değiştir (ürün slug'ları dil bağımsız)
+    return $prefix . $uri;
+}
+
+/**
+ * Ana menü Products dropdown'u için aktif dilde kategori listesi döndürür.
+ * Maks 15 ana (parent_id = NULL veya 0) kategori.
+ */
+function _get_categories_for_menu(): array
+{
+    $lang   = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+    $result = [];
+    try {
+        $pdo   = db();
+        $stmt  = $pdo->query('SELECT id, name, slug FROM categories WHERE is_active = 1 AND (parent_id IS NULL OR parent_id = 0) ORDER BY sort_order ASC, name ASC LIMIT 15');
+        $cats  = $stmt->fetchAll();
+        if (!$cats) return [];
+        $ids   = array_column($cats, 'id');
+        $in    = implode(',', array_fill(0, count($ids), '?'));
+        $tStmt = $pdo->prepare("SELECT category_id, name, slug FROM category_translations WHERE category_id IN ($in) AND language = ?");
+        $tStmt->execute(array_merge($ids, [$lang]));
+        $trMap = [];
+        foreach ($tStmt->fetchAll() as $tr) {
+            $trMap[$tr['category_id']] = $tr;
+        }
+        $prefix = function_exists('lang_prefix') ? lang_prefix() : '';
+        foreach ($cats as $cat) {
+            $name = $cat['name'];
+            $slug = $cat['slug'];
+            if (isset($trMap[$cat['id']])) {
+                if ($trMap[$cat['id']]['name']) $name = $trMap[$cat['id']]['name'];
+                if ($trMap[$cat['id']]['slug']) $slug = $trMap[$cat['id']]['slug'];
+            }
+            $url = $prefix !== '' ? $prefix . '/' . $slug : '/' . $slug;
+            $result[] = ['id' => 0, 'parent_id' => 0, 'title' => $name, 'url' => $url, 'children' => []];
+        }
+    } catch (Throwable $e) {
+        error_log('_get_categories_for_menu: ' . $e->getMessage());
+    }
+    return $result;
+}
+
+/**
  * Ürün slug'ından dil farkındalıklı temiz URL üretir.
  * EN: /riv-6  |  DE: /de/riv-6  |  IT: /it/riv-6  |  FR: /fr/riv-6
  */

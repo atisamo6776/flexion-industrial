@@ -9,6 +9,27 @@ $logoPath    = get_setting('logo_path', '');
 $logoHeight  = max(20, min(120, (int) get_setting('logo_height', '36')));
 $menu        = get_main_menu();
 
+// Products menü öğesine DB'den gelen kategorileri otomatik enjekte et
+$_menuCats = _get_categories_for_menu();
+if (!empty($_menuCats)) {
+    $categoriesListSlugs = ['categories', 'kategorien', 'categorie'];
+    foreach ($menu as &$_mi) {
+        $rawUrl = ltrim(trim(parse_url($_mi['url'] ?? '#', PHP_URL_PATH) ?: '#'), '/');
+        // Dil prefix'ini soy
+        foreach (['de', 'it', 'fr'] as $_lp) {
+            if (str_starts_with($rawUrl, $_lp . '/')) {
+                $rawUrl = substr($rawUrl, strlen($_lp) + 1);
+                break;
+            }
+        }
+        if (in_array($rawUrl, $categoriesListSlugs, true)) {
+            $_mi['children'] = $_menuCats;
+            break;
+        }
+    }
+    unset($_mi);
+}
+
 // ── Aktif sayfa tespiti ──────────────────────────────────────────────────────
 $_navFile  = basename(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: 'index.php');
 $_navQuery = $_SERVER['QUERY_STRING'] ?? '';
@@ -142,7 +163,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
                 </button>
                 <div class="fx-lang-menu" id="fxLangMenu" role="menu">
                     <?php foreach (SUPPORTED_LANGS as $_l): ?>
-                        <a href="<?= e(lang_switch_url($_l)) ?>"
+                        <a href="<?= e(smart_lang_switch_url($_l)) ?>"
                            class="<?= $_l === CURRENT_LANG ? 'active' : '' ?>"
                            role="menuitem"
                            <?php if ($_l !== CURRENT_LANG): ?>
@@ -217,7 +238,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
         <p class="small text-secondary mb-2 text-uppercase fw-semibold" style="font-size:.7rem;"><?= e(t('nav_language', 'Language')) ?></p>
         <div class="d-flex gap-2 flex-wrap">
             <?php foreach (SUPPORTED_LANGS as $_ml): ?>
-                <a href="<?= e(lang_switch_url($_ml)) ?>"
+                <a href="<?= e(smart_lang_switch_url($_ml)) ?>"
                    class="btn btn-sm <?= $_ml === CURRENT_LANG ? 'btn-primary' : 'btn-outline-secondary' ?>"
                    style="font-size:.8rem;"
                    onclick="document.cookie='fx_lang=<?= $_ml ?>;path=/;max-age=31536000';">
