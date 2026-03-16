@@ -139,6 +139,8 @@ if ($route === 'old-page' && $slug !== '') {
 
 // ── Tek segment: kategori mi, sayfa mı? ──────────────────────────────────────
 if ($route === 'cat-or-page' && $slug !== '') {
+    $originalSlug = $slug;
+
     // Önce: çeviri tablosunda kategori slug'ı
     try {
         $stmt = $pdo->prepare(
@@ -180,6 +182,40 @@ if ($route === 'cat-or-page' && $slug !== '') {
             $stmt2->execute([$slug]);
             $pageId = $stmt2->fetchColumn();
         }
+        // Eğer bulunamadıysa, bazı bilinen alias'larla yeniden dene (about-us <-> hakkimizda, contact <-> iletisim)
+        if (!$pageId) {
+            $aliasMap = [
+                'about-us'   => ['hakkimizda', 'hakk\u0131m\u0131zda'],
+                'hakkimizda' => ['about-us'],
+                'hakk\u0131m\u0131zda' => ['about-us'],
+                'contact'    => ['iletisim', 'ileti\u015fim'],
+                'iletisim'   => ['contact'],
+                'ileti\u015fim' => ['contact'],
+            ];
+            $candidates = $aliasMap[$slug] ?? [];
+            foreach ($candidates as $aliasSlug) {
+                // Önce çeviri tablosu
+                $stmt = $pdo->prepare(
+                    'SELECT p.id FROM page_translations pt
+                     JOIN pages p ON p.id = pt.page_id
+                     WHERE pt.slug = ? AND pt.language = ? AND p.is_active = 1
+                     LIMIT 1'
+                );
+                $stmt->execute([$aliasSlug, $lang]);
+                $pageId = $stmt->fetchColumn();
+                if (!$pageId) {
+                    $stmt2 = $pdo->prepare('SELECT id FROM pages WHERE slug = ? AND is_active = 1 LIMIT 1');
+                    $stmt2->execute([$aliasSlug]);
+                    $pageId = $stmt2->fetchColumn();
+                }
+                if ($pageId) {
+                    // Bulduğumuz alias'ı page.php'de veri çekmek için kullanacağız
+                    $slug = $aliasSlug;
+                    break;
+                }
+            }
+        }
+
         if ($pageId) {
             $_GET['slug'] = $slug;
             $_GET['lang'] = $lang;

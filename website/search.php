@@ -80,7 +80,7 @@ if ($q !== '') {
                         <div class="col-md-3 col-sm-6">
                             <a href="product?id=<?= e((string) $product['id']) ?>" class="card h-100 text-decoration-none text-dark border-0 shadow-sm">
                                 <?php if (!empty($product['main_image'])): ?>
-                                    <img src="<?= e($product['main_image']) ?>" class="card-img-top" alt="<?= e($product['name']) ?>">
+                                    <img src="<?= e($product['main_image']) ?>" class="card-img-top fx-product-img" alt="<?= e($product['name']) ?>">
                                 <?php endif; ?>
                                 <div class="card-body py-3">
                                     <h3 class="h6 mb-1"><?= e($product['name']) ?></h3>

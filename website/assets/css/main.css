@@ -418,6 +418,15 @@ div.fx-card-img {
     flex-shrink: 0;
 }
 
+/* Ürün kart görselleri: daha küçük ve oran koruyan görünüm */
+.fx-product-img {
+    height: 160px !important;
+    width: 100% !important;
+    object-fit: contain;
+    object-position: center;
+    background-color: #ffffff;
+}
+
 /* ===================================================
    Kart Hover Animasyonu
    Sadece gerçek hover desteği olan cihazlarda (touch ekranlarda yapışmaz)

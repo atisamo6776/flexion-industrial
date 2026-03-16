@@ -141,9 +141,9 @@ try {
                         <div class="col-md-4 fx-animate">
                             <a href="product?id=<?= e((string) $product['id']) ?>" class="card border-0 shadow-sm h-100 text-decoration-none text-dark overflow-hidden">
                                 <?php if (!empty($product['main_image'])): ?>
-                                    <img src="<?= e(asset_url($product['main_image'])) ?>" class="card-img-top fx-card-img" alt="<?= e($product['name']) ?>" loading="lazy">
+                                    <img src="<?= e(asset_url($product['main_image'])) ?>" class="card-img-top fx-card-img fx-product-img" alt="<?= e($product['name']) ?>" loading="lazy">
                                 <?php else: ?>
-                                    <div class="fx-card-img bg-light text-muted">
+                                    <div class="fx-card-img fx-product-img bg-light text-muted">
                                         <i class="bi bi-box-seam fs-2"></i>
                                     </div>
                                 <?php endif; ?>

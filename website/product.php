@@ -353,9 +353,9 @@ try {
                     <a href="product?id=<?= e((string) $rp['id']) ?>"
                        class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
                         <?php if (!empty($rp['main_image'])): ?>
-                            <img src="<?= e(asset_url($rp['main_image'])) ?>" class="card-img-top fx-card-img" alt="<?= e($rp['name']) ?>" loading="lazy">
+                            <img src="<?= e(asset_url($rp['main_image'])) ?>" class="card-img-top fx-card-img fx-product-img" alt="<?= e($rp['name']) ?>" loading="lazy">
                         <?php else: ?>
-                            <div class="fx-card-img bg-light d-flex align-items-center justify-content-center text-muted">
+                            <div class="fx-card-img fx-product-img bg-light d-flex align-items-center justify-content-center text-muted">
                                 <i class="bi bi-box-seam fs-2"></i>
                             </div>
                         <?php endif; ?>
