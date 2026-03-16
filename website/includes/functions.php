@@ -385,7 +385,7 @@ function get_home_sections(): array
            ?? $translations[$id]['en']
            ?? null;
 
-        // Base içerik (görseller ve varsayılan metinler)
+        // Base içerik (görseller ve varsayılan metinler) — her zaman ana tablodan
         $baseContent = [];
         if (!empty($row['content_json'])) {
             $decoded = json_decode($row['content_json'], true);
@@ -394,7 +394,7 @@ function get_home_sections(): array
             }
         }
 
-        // Çeviri varsa: sadece metin alanlarını override et, görselleri base'ten koru
+        // Çeviri varsa: sadece metin anahtarlarını override et, görsel anahtarları tamamen yok say
         $mergedContent = $baseContent;
         if ($tr) {
             if (!empty($tr['title'])) {
@@ -405,8 +405,8 @@ function get_home_sections(): array
                 if (is_array($trData)) {
                     $imageKeys = ['image', 'image_url', 'image_mode', 'image_opacity', 'image_blur', 'image_col'];
                     foreach ($trData as $k => $v) {
-                        // Görsel anahtarları çeviriden geliyorsa ama boşsa, base'i ezme
-                        if (in_array($k, $imageKeys, true) && ($v === null || $v === '')) {
+                        if (in_array($k, $imageKeys, true)) {
+                            // Görsel ayarları sadece ana dilden gelir
                             continue;
                         }
                         $mergedContent[$k] = $v;
