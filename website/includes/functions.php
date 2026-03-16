@@ -229,6 +229,19 @@ function get_main_menu(): array
 }
 
 /**
+ * Ürün slug'ından dil farkındalıklı temiz URL üretir.
+ * EN: /riv-6  |  DE: /de/riv-6  |  IT: /it/riv-6  |  FR: /fr/riv-6
+ */
+function product_url(string $prodSlug): string
+{
+    if ($prodSlug === '') {
+        return function_exists('categories_list_url') ? categories_list_url() : '/categories';
+    }
+    $prefix = function_exists('lang_prefix') ? lang_prefix() : '';
+    return $prefix !== '' ? $prefix . '/' . rawurlencode($prodSlug) : '/' . rawurlencode($prodSlug);
+}
+
+/**
  * page.php?slug=xxx formatındaki URL'leri seçili dilde temiz sayfa URL'ine çevirir.
  * Menü/footer'da eski linkler temiz URL olarak çıksın diye kullanılır.
  */

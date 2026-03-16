@@ -17,7 +17,8 @@ $inquiryError = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['inquiry_submit'])) {
     // Honeypot: bot doldurursa sessizce geç
     if (!empty($_POST['website_url'])) {
-        header('Location: product?id=' . $productId . '&sent=1');
+        $_redir = $productSlug !== '' ? product_url($productSlug) : 'product?id=' . $productId;
+        header('Location: ' . $_redir . '?sent=1');
         exit;
     }
 
@@ -63,7 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['inquiry_submit'])) {
                 send_notification_mail($toMail, $subj, $body);
             }
             // PRG redirect → sayfayı yenileme double-submit yapmaz, 500 hatası ortadan kalkar
-            header('Location: product.php?id=' . $productId . '&sent=1');
+            $_redir = $productSlug !== '' ? product_url($productSlug) : 'product?id=' . $productId;
+            header('Location: ' . $_redir . '?sent=1');
             exit;
         }
     }
@@ -354,7 +356,7 @@ try {
             </div>
             <?php foreach ($relatedProducts as $rp): ?>
                 <div class="col-md-4 fx-animate">
-                    <a href="product?id=<?= e((string) $rp['id']) ?>"
+                    <a href="<?= e(product_url($rp['slug'])) ?>"
                        class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
                         <?php if (!empty($rp['main_image'])): ?>
                             <div class="fx-product-thumb">

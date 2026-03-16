@@ -692,7 +692,135 @@ if ($runMigration) {
         $results[] = ['label' => 'site_translations: varsayılan değerler', 'status' => 'ok', 'msg' => count($siteTranslationDefaults) . ' satır işlendi'];
     }
 
-    // 5. Varsayılan admin kullanıcısı
+    // 5. Kategori çevirileri — tüm diller için, slug ile lookup
+    $categoryTranslationSeeds = [
+        'water-hoses' => [
+            'de' => ['name' => 'Wasserschläuche',          'slug' => 'wasserschlaeuche',               'short_description' => 'Schläuche für Wasser und allgemeine Dienste'],
+            'it' => ['name' => 'Tubi per acqua',            'slug' => 'tubi-per-acqua',                 'short_description' => 'Tubi per acqua e servizi generali'],
+            'fr' => ['name' => 'Tuyaux pour eau',           'slug' => 'tuyaux-pour-eau',                'short_description' => 'Tuyaux pour l\'eau et services généraux'],
+        ],
+        'air-gas-hoses' => [
+            'de' => ['name' => 'Luft-Gas-Schläuche',        'slug' => 'luft-gas-schlaeuche',            'short_description' => 'Schläuche für Luft, Gas und Pneumatik'],
+            'it' => ['name' => 'Tubi aria-gas',             'slug' => 'tubi-aria-gas',                  'short_description' => 'Tubi per aria compressa, gas e pneumatica'],
+            'fr' => ['name' => 'Tuyaux air-gaz',            'slug' => 'tuyaux-air-gaz',                 'short_description' => 'Tuyaux pour air comprimé, gaz et pneumatique'],
+        ],
+        'oil-petroleum-hoses' => [
+            'de' => ['name' => 'Öl- und Kraftstoffschläuche', 'slug' => 'oel-und-kraftstoffschlaeuche', 'short_description' => 'Schläuche für Öl, Kraftstoff und Petroleum'],
+            'it' => ['name' => 'Tubi per olio e petrolio',  'slug' => 'tubi-per-olio-e-petrolio',        'short_description' => 'Tubi per olio, carburante e petrolio'],
+            'fr' => ['name' => 'Tuyaux huile et pétrole',   'slug' => 'tuyaux-huile-et-petrole',         'short_description' => 'Tuyaux pour huile, carburant et pétrole'],
+        ],
+        'welding-hoses' => [
+            'de' => ['name' => 'Schweißschläuche',          'slug' => 'schweissschlaeuche',              'short_description' => 'Schläuche für Schweißanwendungen'],
+            'it' => ['name' => 'Tubi per saldatura',        'slug' => 'tubi-per-saldatura',              'short_description' => 'Tubi per applicazioni di saldatura'],
+            'fr' => ['name' => 'Tuyaux de soudage',         'slug' => 'tuyaux-de-soudage',               'short_description' => 'Tuyaux pour applications de soudage'],
+        ],
+        'food-hoses' => [
+            'de' => ['name' => 'Lebensmittelschläuche',     'slug' => 'lebensmittelschlaeuche',          'short_description' => 'Lebensmittelgeeignete Schläuche'],
+            'it' => ['name' => 'Tubi alimentari',           'slug' => 'tubi-alimentari',                 'short_description' => 'Tubi per uso alimentare'],
+            'fr' => ['name' => 'Tuyaux alimentaires',       'slug' => 'tuyaux-alimentaires',             'short_description' => 'Tuyaux pour usage alimentaire'],
+        ],
+        'material-handling-hoses' => [
+            'de' => ['name' => 'Materialhandling-Schläuche', 'slug' => 'materialhandling-schlaeuche',   'short_description' => 'Schläuche für Materialförderung und -transport'],
+            'it' => ['name' => 'Tubi per movimentazione materiali', 'slug' => 'tubi-movimentazione-materiali', 'short_description' => 'Tubi per la movimentazione di materiali'],
+            'fr' => ['name' => 'Tuyaux de manutention',     'slug' => 'tuyaux-de-manutention',           'short_description' => 'Tuyaux pour la manutention de matériaux'],
+        ],
+        'sewer-cleaning-hoses' => [
+            'de' => ['name' => 'Kanalreinigungsschläuche',  'slug' => 'kanalreinigungsschlaeuche',       'short_description' => 'Schläuche für Kanalreinigung und Spülung'],
+            'it' => ['name' => 'Tubi per pulizia fognature', 'slug' => 'tubi-pulizia-fognature',          'short_description' => 'Tubi per la pulizia delle fognature'],
+            'fr' => ['name' => 'Tuyaux de débouchage',      'slug' => 'tuyaux-de-debouchage',            'short_description' => 'Tuyaux pour le débouchage des canalisations'],
+        ],
+        'steam-hoses' => [
+            'de' => ['name' => 'Dampfschläuche',            'slug' => 'dampfschlaeuche',                 'short_description' => 'Schläuche für Dampf und Hochtemperaturanwendungen'],
+            'it' => ['name' => 'Tubi vapore',               'slug' => 'tubi-vapore',                     'short_description' => 'Tubi per vapore e alte temperature'],
+            'fr' => ['name' => 'Tuyaux vapeur',             'slug' => 'tuyaux-vapeur',                   'short_description' => 'Tuyaux pour vapeur et hautes températures'],
+        ],
+        'chemical-hoses' => [
+            'de' => ['name' => 'Chemikalienschläuche',      'slug' => 'chemikalienschlaeuche',           'short_description' => 'Schläuche für chemische Anwendungen'],
+            'it' => ['name' => 'Tubi chimici',              'slug' => 'tubi-chimici',                    'short_description' => 'Tubi per applicazioni chimiche'],
+            'fr' => ['name' => 'Tuyaux chimiques',          'slug' => 'tuyaux-chimiques',                'short_description' => 'Tuyaux pour applications chimiques'],
+        ],
+        'hydraulic-hoses' => [
+            'de' => ['name' => 'Hydraulikschläuche',        'slug' => 'hydraulikschlaeuche',             'short_description' => 'Schläuche für Hydrauliksysteme'],
+            'it' => ['name' => 'Tubi idraulici',            'slug' => 'tubi-idraulici',                  'short_description' => 'Tubi per sistemi idraulici'],
+            'fr' => ['name' => 'Tuyaux hydrauliques',       'slug' => 'tuyaux-hydrauliques',             'short_description' => 'Tuyaux pour systèmes hydrauliques'],
+        ],
+    ];
+
+    if (mg_table_exists($pdo, $dbName, 'category_translations') && mg_table_exists($pdo, $dbName, 'categories')) {
+        $catTrStmt = $pdo->prepare(
+            'INSERT INTO category_translations (category_id, language, name, slug, short_description)
+             VALUES (:cid, :lang, :name, :slug, :sdesc)
+             ON DUPLICATE KEY UPDATE category_id = category_id'
+        );
+        $catTrInserted = 0;
+        foreach ($categoryTranslationSeeds as $enSlug => $langs) {
+            $catIdStmt = $pdo->prepare('SELECT id FROM categories WHERE slug = ? LIMIT 1');
+            $catIdStmt->execute([$enSlug]);
+            $catId = $catIdStmt->fetchColumn();
+            if (!$catId) continue;
+            foreach ($langs as $lang => $fields) {
+                try {
+                    $catTrStmt->execute([
+                        ':cid'   => $catId,
+                        ':lang'  => $lang,
+                        ':name'  => $fields['name'],
+                        ':slug'  => $fields['slug'],
+                        ':sdesc' => $fields['short_description'] ?? null,
+                    ]);
+                    $catTrInserted++;
+                } catch (Throwable $e) {
+                    // unique key ihlali: zaten var, geç
+                }
+            }
+        }
+        $results[] = ['label' => 'Kategori çevirileri (DE/IT/FR)', 'status' => 'ok', 'msg' => "$catTrInserted satır işlendi (varsa dokunulmadı)"];
+    }
+
+    // 6. Sayfa çevirileri — About Us ve Contact için DE/IT/FR
+    $pageTranslationSeeds = [
+        'about-us' => [
+            'de' => ['title' => 'Über uns',   'slug' => 'ueber-uns', 'banner_title' => 'Über uns'],
+            'it' => ['title' => 'Chi siamo',  'slug' => 'chi-siamo', 'banner_title' => 'Chi siamo'],
+            'fr' => ['title' => 'À propos',   'slug' => 'a-propos',  'banner_title' => 'À propos'],
+        ],
+        'contact' => [
+            'de' => ['title' => 'Kontakt',    'slug' => 'kontakt',  'banner_title' => 'Kontakt'],
+            'it' => ['title' => 'Contatti',   'slug' => 'contatti', 'banner_title' => 'Contatti'],
+            'fr' => ['title' => 'Contact',    'slug' => 'contact',  'banner_title' => 'Contact'],
+        ],
+    ];
+
+    if (mg_table_exists($pdo, $dbName, 'page_translations') && mg_table_exists($pdo, $dbName, 'pages')) {
+        $pageTrStmt = $pdo->prepare(
+            'INSERT INTO page_translations (page_id, language, title, slug, banner_title)
+             VALUES (:pid, :lang, :title, :slug, :btitle)
+             ON DUPLICATE KEY UPDATE page_id = page_id'
+        );
+        $pageTrInserted = 0;
+        foreach ($pageTranslationSeeds as $enSlug => $langs) {
+            $pageIdStmt = $pdo->prepare('SELECT id FROM pages WHERE slug = ? LIMIT 1');
+            $pageIdStmt->execute([$enSlug]);
+            $pageId = $pageIdStmt->fetchColumn();
+            if (!$pageId) continue;
+            foreach ($langs as $lang => $fields) {
+                try {
+                    $pageTrStmt->execute([
+                        ':pid'    => $pageId,
+                        ':lang'   => $lang,
+                        ':title'  => $fields['title'],
+                        ':slug'   => $fields['slug'],
+                        ':btitle' => $fields['banner_title'] ?? $fields['title'],
+                    ]);
+                    $pageTrInserted++;
+                } catch (Throwable $e) {
+                    // unique key ihlali: zaten var, geç
+                }
+            }
+        }
+        $results[] = ['label' => 'Sayfa çevirileri About Us & Contact (DE/IT/FR)', 'status' => 'ok', 'msg' => "$pageTrInserted satır işlendi (varsa dokunulmadı)"];
+    }
+
+    // 7. Varsayılan admin kullanıcısı
     $label = 'Kullanıcı: <code>admin</code>';
     try {
         $cnt = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE username = 'admin'")->fetchColumn();

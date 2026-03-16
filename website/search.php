@@ -78,7 +78,7 @@ if ($q !== '') {
                 <div class="row g-3">
                     <?php foreach ($resultsProducts as $product): ?>
                         <div class="col-md-3 col-sm-6">
-                            <a href="product?id=<?= e((string) $product['id']) ?>" class="card h-100 text-decoration-none text-dark border-0 shadow-sm">
+                            <a href="<?= e(product_url($product['slug'])) ?>" class="card h-100 text-decoration-none text-dark border-0 shadow-sm">
                                 <?php if (!empty($product['main_image'])): ?>
                                     <div class="fx-product-thumb">
                                         <img src="<?= e($product['main_image']) ?>" class="fx-product-thumb-img" alt="<?= e($product['name']) ?>" loading="lazy">

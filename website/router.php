@@ -62,9 +62,8 @@ if ($route === 'old-prod' && $id > 0) {
         $stmt->execute([$lang, $lang, $id]);
         $row = $stmt->fetch();
         if ($row) {
-            $cSlug = $row['c_slug_tr'] ?: $row['c_slug'];
             $pSlug = $row['p_slug_tr'] ?: $row['p_slug'];
-            header('Location: ' . $prefix . '/' . rawurlencode($cSlug) . '/' . rawurlencode($pSlug), true, 301);
+            header('Location: ' . $prefix . '/' . rawurlencode($pSlug), true, 301);
             exit;
         }
     } catch (Throwable $e) {
@@ -185,12 +184,17 @@ if ($route === 'cat-or-page' && $slug !== '') {
         // Eğer bulunamadıysa, bazı bilinen alias'larla yeniden dene (about-us <-> hakkimizda, contact <-> iletisim)
         if (!$pageId) {
             $aliasMap = [
-                'about-us'   => ['hakkimizda', 'hakk\u0131m\u0131zda'],
+                'about-us'   => ['hakkimizda', 'hakkımızda', 'ueber-uns', 'chi-siamo', 'a-propos'],
                 'hakkimizda' => ['about-us'],
-                'hakk\u0131m\u0131zda' => ['about-us'],
-                'contact'    => ['iletisim', 'ileti\u015fim'],
+                'hakkımızda' => ['about-us'],
+                'ueber-uns'  => ['about-us'],
+                'chi-siamo'  => ['about-us'],
+                'a-propos'   => ['about-us'],
+                'contact'    => ['iletisim', 'iletişim', 'kontakt', 'contatti'],
                 'iletisim'   => ['contact'],
-                'ileti\u015fim' => ['contact'],
+                'iletişim'   => ['contact'],
+                'kontakt'    => ['contact'],
+                'contatti'   => ['contact'],
             ];
             $candidates = $aliasMap[$slug] ?? [];
             foreach ($candidates as $aliasSlug) {
@@ -224,6 +228,25 @@ if ($route === 'cat-or-page' && $slug !== '') {
         }
     } catch (Throwable $e) {
         error_log('router page lookup: ' . $e->getMessage());
+    }
+
+    // Ürün slug'ı olarak dene (aynı slug tüm dillerde geçerli)
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT p.slug FROM products p
+             LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.language = ?
+             WHERE (pt.slug = ? OR p.slug = ?) AND p.is_active = 1 LIMIT 1'
+        );
+        $stmt->execute([$lang, $slug, $slug]);
+        $prodSlug = $stmt->fetchColumn();
+        if ($prodSlug) {
+            $_GET['slug'] = $prodSlug;
+            $_GET['lang'] = $lang;
+            require __DIR__ . '/product.php';
+            exit;
+        }
+    } catch (Throwable $e) {
+        error_log('router product lookup: ' . $e->getMessage());
     }
 
     // Bulunamadı
