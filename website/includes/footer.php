@@ -89,6 +89,11 @@ try {
             $url = $prefix !== '' ? $prefix . '/' . $slug : '/' . $slug;
             $footerCols['categories']['links'][] = ['title' => $name, 'url' => $url];
         }
+        // "View all categories" linki
+        $footerCols['categories']['links'][] = [
+            'title' => t('footer_view_all_categories', 'View all categories'),
+            'url'   => function_exists('categories_list_url') ? categories_list_url() : '/categories',
+        ];
     }
 } catch (Throwable $e) {
     // sessiz
@@ -245,7 +250,7 @@ try {
     <div class="fx-cookie-inner">
         <p class="fx-cookie-text small mb-0">
             <?= e(t('cookie_message', 'This website uses cookies to provide the best experience.')) ?>
-            <a href="/page/privacy-policy" class="fw-semibold text-white"><?= e(t('cookie_policy_link', 'Privacy Policy')) ?></a>
+            <a href="<?= e(function_exists('page_url') ? page_url('privacy-policy') : '/privacy-policy') ?>" class="fw-semibold text-white"><?= e(t('cookie_policy_link', 'Privacy Policy')) ?></a>
         </p>
         <div class="fx-cookie-actions">
             <button id="fx-cookie-accept" class="btn btn-sm btn-light fw-semibold px-3"><?= e(t('cookie_accept', 'Accept')) ?></button>

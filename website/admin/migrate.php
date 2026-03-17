@@ -927,7 +927,347 @@ if ($runMigration) {
         $results[] = ['label' => 'Sayfa çevirileri About Us & Contact (DE/IT/FR)', 'status' => 'ok', 'msg' => "$pageTrInserted satır işlendi (varsa dokunulmadı)"];
     }
 
-    // 8. Varsayılan admin kullanıcısı
+    // 8. Legal sayfalar + çevirileri (Privacy Policy, Cookie Policy, Terms & Conditions)
+    if (mg_table_exists($pdo, $dbName, 'pages') && mg_table_exists($pdo, $dbName, 'page_translations')) {
+
+        $legalPages = [
+            [
+                'slug'         => 'privacy-policy',
+                'title'        => 'Privacy Policy',
+                'banner_title' => 'Privacy Policy',
+                'content'      => '<h2>Privacy Policy</h2>
+<p>Flexion Industrial AG ("Flexion", "we", "us", or "our") is committed to protecting your personal data. This Privacy Policy explains how we collect, use, and protect information about you when you visit <strong>flexion-industrial.ch</strong>.</p>
+<h3>1. Data We Collect</h3>
+<ul>
+<li><strong>Contact requests:</strong> Name, email address, phone number, company name, country, and message content submitted via our contact or product enquiry forms.</li>
+<li><strong>Usage data:</strong> IP address, browser type, pages visited, and session duration collected through server logs and analytics cookies.</li>
+</ul>
+<h3>2. Purpose of Processing</h3>
+<p>We process your personal data solely to respond to your enquiries, to improve our website, and to comply with applicable Swiss and EU data-protection regulations (nDSG / GDPR).</p>
+<h3>3. Data Retention</h3>
+<p>Contact enquiry data is retained for a maximum of 24 months. Log data is automatically deleted after 90 days.</p>
+<h3>4. Sharing of Data</h3>
+<p>We do not sell or rent your personal data to third parties. We may share data with trusted service providers (hosting, analytics) under strict confidentiality agreements.</p>
+<h3>5. Your Rights</h3>
+<p>You have the right to access, correct, or request deletion of your personal data at any time by contacting us at <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a>.</p>
+<h3>6. Contact</h3>
+<p>Flexion Industrial AG<br>Switzerland<br>Email: info@flexionindustrial.com</p>',
+                'translations' => [
+                    'de' => ['slug' => 'datenschutzerklaerung', 'title' => 'Datenschutzerklärung', 'banner_title' => 'Datenschutzerklärung', 'content' => '<h2>Datenschutzerklärung</h2>
+<p>Flexion Industrial AG ("Flexion", "wir") verpflichtet sich zum Schutz Ihrer personenbezogenen Daten. Diese Datenschutzerklärung erläutert, wie wir Informationen erheben, verwenden und schützen, wenn Sie <strong>flexion-industrial.ch</strong> besuchen.</p>
+<h3>1. Erhobene Daten</h3>
+<ul>
+<li><strong>Kontaktanfragen:</strong> Name, E-Mail, Telefonnummer, Unternehmen, Land und Nachrichteninhalt aus unseren Kontakt- oder Produktanfrage-Formularen.</li>
+<li><strong>Nutzungsdaten:</strong> IP-Adresse, Browsertyp, besuchte Seiten und Sitzungsdauer über Server-Logs und Analyse-Cookies.</li>
+</ul>
+<h3>2. Zweck der Verarbeitung</h3>
+<p>Wir verarbeiten Ihre Daten ausschließlich zur Beantwortung Ihrer Anfragen, zur Verbesserung unserer Website und zur Einhaltung des Schweizer Datenschutzgesetzes (nDSG) und der DSGVO.</p>
+<h3>3. Datenspeicherung</h3>
+<p>Kontaktanfragen werden maximal 24 Monate gespeichert. Log-Daten werden nach 90 Tagen automatisch gelöscht.</p>
+<h3>4. Datenweitergabe</h3>
+<p>Wir verkaufen oder vermieten Ihre Daten nicht. Daten werden nur unter strikten Vertraulichkeitsvereinbarungen an Dienstleister (Hosting, Analyse) weitergegeben.</p>
+<h3>5. Ihre Rechte</h3>
+<p>Sie haben das Recht auf Auskunft, Berichtigung oder Löschung Ihrer Daten. Kontaktieren Sie uns unter <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a>.</p>'],
+                    'it' => ['slug' => 'informativa-sulla-privacy', 'title' => 'Informativa sulla privacy', 'banner_title' => 'Informativa sulla privacy', 'content' => '<h2>Informativa sulla privacy</h2>
+<p>Flexion Industrial AG ("Flexion", "noi") si impegna a proteggere i Vostri dati personali. La presente informativa spiega come raccogliamo, utilizziamo e proteggiamo le informazioni su di voi quando visitate <strong>flexion-industrial.ch</strong>.</p>
+<h3>1. Dati raccolti</h3>
+<ul>
+<li><strong>Richieste di contatto:</strong> nome, e-mail, telefono, azienda, paese e testo del messaggio inviati tramite i nostri moduli.</li>
+<li><strong>Dati di utilizzo:</strong> indirizzo IP, tipo di browser, pagine visitate e durata della sessione tramite log del server e cookie analitici.</li>
+</ul>
+<h3>2. Finalità del trattamento</h3>
+<p>Trattiamo i Vostri dati esclusivamente per rispondere alle Vostre richieste, migliorare il nostro sito e rispettare la normativa svizzera (nLPD) e il GDPR.</p>
+<h3>3. Conservazione</h3>
+<p>Le richieste di contatto vengono conservate per un massimo di 24 mesi. I dati di log vengono eliminati automaticamente dopo 90 giorni.</p>
+<h3>4. Condivisione dei dati</h3>
+<p>Non vendiamo né affittiamo i Vostri dati. I dati vengono condivisi con fornitori di servizi (hosting, analisi) solo con accordi di riservatezza rigorosi.</p>
+<h3>5. I Vostri diritti</h3>
+<p>Avete il diritto di accedere, rettificare o richiedere la cancellazione dei Vostri dati contattandoci all\'indirizzo <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a>.</p>'],
+                    'fr' => ['slug' => 'politique-de-confidentialite', 'title' => 'Politique de confidentialité', 'banner_title' => 'Politique de confidentialité', 'content' => '<h2>Politique de confidentialité</h2>
+<p>Flexion Industrial AG ("Flexion", "nous") s\'engage à protéger vos données personnelles. La présente politique explique comment nous collectons, utilisons et protégeons vos informations lorsque vous visitez <strong>flexion-industrial.ch</strong>.</p>
+<h3>1. Données collectées</h3>
+<ul>
+<li><strong>Demandes de contact :</strong> nom, e-mail, téléphone, société, pays et contenu du message soumis via nos formulaires.</li>
+<li><strong>Données d\'utilisation :</strong> adresse IP, type de navigateur, pages visitées et durée de session via les journaux serveur et les cookies analytiques.</li>
+</ul>
+<h3>2. Finalité du traitement</h3>
+<p>Nous traitons vos données uniquement pour répondre à vos demandes, améliorer notre site et respecter la loi suisse (nLPD) et le RGPD.</p>
+<h3>3. Conservation</h3>
+<p>Les demandes de contact sont conservées 24 mois maximum. Les données de journal sont supprimées automatiquement après 90 jours.</p>
+<h3>4. Partage des données</h3>
+<p>Nous ne vendons ni ne louons vos données. Elles ne sont partagées qu\'avec des prestataires (hébergement, analyse) sous strict accord de confidentialité.</p>
+<h3>5. Vos droits</h3>
+<p>Vous pouvez accéder, rectifier ou demander la suppression de vos données en nous contactant à <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a>.</p>'],
+                ],
+            ],
+            [
+                'slug'         => 'cookie-policy',
+                'title'        => 'Cookie Policy',
+                'banner_title' => 'Cookie Policy',
+                'content'      => '<h2>Cookie Policy</h2>
+<p>This Cookie Policy explains how Flexion Industrial AG uses cookies and similar technologies on <strong>flexion-industrial.ch</strong>.</p>
+<h3>1. What Are Cookies?</h3>
+<p>Cookies are small text files stored on your device when you visit a website. They help the site function properly and provide usage statistics.</p>
+<h3>2. Types of Cookies We Use</h3>
+<ul>
+<li><strong>Essential cookies:</strong> Required for the website to operate (session management, security).</li>
+<li><strong>Analytics cookies:</strong> Help us understand how visitors interact with the site (page views, traffic sources). These are only activated after your consent.</li>
+</ul>
+<h3>3. Managing Cookies</h3>
+<p>You can accept or decline non-essential cookies using the cookie banner shown on your first visit. You may also manage cookie preferences through your browser settings at any time.</p>
+<h3>4. Third-Party Cookies</h3>
+<p>We may use trusted third-party services (e.g. Google Analytics) that set their own cookies. These are subject to the third party\'s privacy policy.</p>
+<h3>5. Contact</h3>
+<p>For questions about our use of cookies, contact us at <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a>.</p>',
+                'translations' => [
+                    'de' => ['slug' => 'cookie-richtlinie', 'title' => 'Cookie-Richtlinie', 'banner_title' => 'Cookie-Richtlinie', 'content' => '<h2>Cookie-Richtlinie</h2>
+<p>Diese Cookie-Richtlinie erläutert, wie Flexion Industrial AG Cookies und ähnliche Technologien auf <strong>flexion-industrial.ch</strong> einsetzt.</p>
+<h3>1. Was sind Cookies?</h3>
+<p>Cookies sind kleine Textdateien, die beim Besuch einer Website auf Ihrem Gerät gespeichert werden. Sie helfen, die Website korrekt zu betreiben und Nutzungsstatistiken zu erstellen.</p>
+<h3>2. Von uns verwendete Cookie-Typen</h3>
+<ul>
+<li><strong>Notwendige Cookies:</strong> Erforderlich für den Betrieb der Website (Sitzungsverwaltung, Sicherheit).</li>
+<li><strong>Analyse-Cookies:</strong> Helfen uns zu verstehen, wie Besucher die Website nutzen. Diese werden nur nach Ihrer Zustimmung aktiviert.</li>
+</ul>
+<h3>3. Cookie-Verwaltung</h3>
+<p>Sie können nicht notwendige Cookies über das Cookie-Banner akzeptieren oder ablehnen. Außerdem können Sie Cookie-Einstellungen jederzeit in Ihrem Browser verwalten.</p>
+<h3>4. Drittanbieter-Cookies</h3>
+<p>Wir können vertrauenswürdige Drittanbieterdienste (z. B. Google Analytics) verwenden, die eigene Cookies setzen.</p>
+<h3>5. Kontakt</h3>
+<p>Bei Fragen zu Cookies kontaktieren Sie uns unter <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a>.</p>'],
+                    'it' => ['slug' => 'cookie-policy', 'title' => 'Cookie Policy', 'banner_title' => 'Cookie Policy', 'content' => '<h2>Cookie Policy</h2>
+<p>La presente Cookie Policy spiega come Flexion Industrial AG utilizza cookie e tecnologie simili su <strong>flexion-industrial.ch</strong>.</p>
+<h3>1. Cosa sono i cookie?</h3>
+<p>I cookie sono piccoli file di testo memorizzati sul Vostro dispositivo quando visitate un sito web. Aiutano il sito a funzionare correttamente e forniscono statistiche di utilizzo.</p>
+<h3>2. Tipi di cookie utilizzati</h3>
+<ul>
+<li><strong>Cookie essenziali:</strong> necessari per il funzionamento del sito (gestione sessioni, sicurezza).</li>
+<li><strong>Cookie analitici:</strong> ci aiutano a capire come i visitatori interagiscono con il sito. Vengono attivati solo dopo il Vostro consenso.</li>
+</ul>
+<h3>3. Gestione dei cookie</h3>
+<p>Potete accettare o rifiutare i cookie non essenziali tramite il banner cookie mostrato alla prima visita, oppure gestire le preferenze dal browser.</p>
+<h3>4. Cookie di terze parti</h3>
+<p>Potremmo utilizzare servizi di terze parti (es. Google Analytics) che impostano i propri cookie.</p>
+<h3>5. Contatti</h3>
+<p>Per domande sull\'uso dei cookie: <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a>.</p>'],
+                    'fr' => ['slug' => 'politique-des-cookies', 'title' => 'Politique des cookies', 'banner_title' => 'Politique des cookies', 'content' => '<h2>Politique des cookies</h2>
+<p>La présente politique explique comment Flexion Industrial AG utilise les cookies et technologies similaires sur <strong>flexion-industrial.ch</strong>.</p>
+<h3>1. Qu\'est-ce qu\'un cookie ?</h3>
+<p>Les cookies sont de petits fichiers texte enregistrés sur votre appareil lors de la visite d\'un site web. Ils permettent le bon fonctionnement du site et fournissent des statistiques d\'utilisation.</p>
+<h3>2. Types de cookies utilisés</h3>
+<ul>
+<li><strong>Cookies essentiels :</strong> nécessaires au fonctionnement du site (gestion de session, sécurité).</li>
+<li><strong>Cookies analytiques :</strong> nous aident à comprendre comment les visiteurs interagissent avec le site. Ils ne sont activés qu\'après votre consentement.</li>
+</ul>
+<h3>3. Gestion des cookies</h3>
+<p>Vous pouvez accepter ou refuser les cookies non essentiels via la bannière cookie à votre première visite, ou gérer vos préférences dans les paramètres de votre navigateur.</p>
+<h3>4. Cookies tiers</h3>
+<p>Nous pouvons faire appel à des services tiers (ex. Google Analytics) qui déposent leurs propres cookies.</p>
+<h3>5. Contact</h3>
+<p>Pour toute question : <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a>.</p>'],
+                ],
+            ],
+            [
+                'slug'         => 'terms-and-conditions',
+                'title'        => 'Terms & Conditions',
+                'banner_title' => 'Terms & Conditions',
+                'content'      => '<h2>Terms &amp; Conditions</h2>
+<p>These Terms &amp; Conditions govern your use of the Flexion Industrial AG website at <strong>flexion-industrial.ch</strong>. By accessing the site, you agree to these terms.</p>
+<h3>1. Use of the Website</h3>
+<p>The content published on this website is for general informational purposes only. Flexion Industrial AG reserves the right to modify or discontinue any part of the site without notice.</p>
+<h3>2. Intellectual Property</h3>
+<p>All content — including texts, images, logos, and graphics — is the property of Flexion Industrial AG or its licensors and may not be reproduced without prior written permission.</p>
+<h3>3. Product Information</h3>
+<p>Technical specifications, dimensions, and availability of products are subject to change without notice. Contact us for the most up-to-date information before placing an order.</p>
+<h3>4. Limitation of Liability</h3>
+<p>Flexion Industrial AG shall not be liable for any direct, indirect, incidental, or consequential damages arising from the use of this website or the information it contains.</p>
+<h3>5. Governing Law</h3>
+<p>These Terms are governed by Swiss law. Any disputes shall be subject to the exclusive jurisdiction of the courts of Switzerland.</p>
+<h3>6. Contact</h3>
+<p>Flexion Industrial AG<br>Switzerland<br>Email: <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a></p>',
+                'translations' => [
+                    'de' => ['slug' => 'allgemeine-geschaeftsbedingungen', 'title' => 'Allgemeine Geschäftsbedingungen', 'banner_title' => 'AGB', 'content' => '<h2>Allgemeine Geschäftsbedingungen</h2>
+<p>Diese AGB regeln die Nutzung der Website von Flexion Industrial AG unter <strong>flexion-industrial.ch</strong>. Mit dem Zugriff auf die Website stimmen Sie diesen Bedingungen zu.</p>
+<h3>1. Nutzung der Website</h3>
+<p>Die auf dieser Website veröffentlichten Inhalte dienen ausschließlich allgemeinen Informationszwecken. Flexion Industrial AG behält sich vor, Teile der Website ohne vorherige Ankündigung zu ändern oder einzustellen.</p>
+<h3>2. Geistiges Eigentum</h3>
+<p>Alle Inhalte – Texte, Bilder, Logos und Grafiken – sind Eigentum von Flexion Industrial AG oder ihrer Lizenzgeber und dürfen ohne vorherige schriftliche Genehmigung nicht reproduziert werden.</p>
+<h3>3. Produktinformationen</h3>
+<p>Technische Spezifikationen und Verfügbarkeit können sich ohne Vorankündigung ändern. Kontaktieren Sie uns vor einer Bestellung für aktuelle Informationen.</p>
+<h3>4. Haftungsbeschränkung</h3>
+<p>Flexion Industrial AG haftet nicht für direkte, indirekte oder Folgeschäden, die aus der Nutzung dieser Website entstehen.</p>
+<h3>5. Anwendbares Recht</h3>
+<p>Diese AGB unterliegen Schweizer Recht. Streitigkeiten unterliegen der ausschließlichen Zuständigkeit der Schweizer Gerichte.</p>
+<h3>6. Kontakt</h3>
+<p>Email: <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a></p>'],
+                    'it' => ['slug' => 'termini-e-condizioni', 'title' => 'Termini e condizioni', 'banner_title' => 'Termini e condizioni', 'content' => '<h2>Termini e condizioni</h2>
+<p>I presenti Termini e condizioni disciplinano l\'utilizzo del sito web di Flexion Industrial AG all\'indirizzo <strong>flexion-industrial.ch</strong>. Accedendo al sito, accettate questi termini.</p>
+<h3>1. Utilizzo del sito</h3>
+<p>I contenuti pubblicati hanno scopo puramente informativo. Flexion Industrial AG si riserva il diritto di modificare o interrompere qualsiasi parte del sito senza preavviso.</p>
+<h3>2. Proprietà intellettuale</h3>
+<p>Tutti i contenuti — testi, immagini, loghi e grafica — sono di proprietà di Flexion Industrial AG o dei suoi licenziatari e non possono essere riprodotti senza autorizzazione scritta.</p>
+<h3>3. Informazioni sui prodotti</h3>
+<p>Le specifiche tecniche e la disponibilità dei prodotti sono soggette a modifiche senza preavviso. Contattateci prima di effettuare un ordine.</p>
+<h3>4. Limitazione di responsabilità</h3>
+<p>Flexion Industrial AG non è responsabile per danni diretti, indiretti o consequenziali derivanti dall\'utilizzo di questo sito.</p>
+<h3>5. Legge applicabile</h3>
+<p>I presenti termini sono disciplinati dalla legge svizzera. Eventuali controversie sono di competenza esclusiva dei tribunali svizzeri.</p>
+<h3>6. Contatti</h3>
+<p>Email: <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a></p>'],
+                    'fr' => ['slug' => 'conditions-generales', 'title' => 'Conditions générales', 'banner_title' => 'CGU', 'content' => '<h2>Conditions générales d\'utilisation</h2>
+<p>Les présentes Conditions générales régissent l\'utilisation du site web de Flexion Industrial AG à l\'adresse <strong>flexion-industrial.ch</strong>. En accédant au site, vous acceptez ces conditions.</p>
+<h3>1. Utilisation du site</h3>
+<p>Les contenus publiés sur ce site sont fournis à titre purement informatif. Flexion Industrial AG se réserve le droit de modifier ou d\'interrompre toute partie du site sans préavis.</p>
+<h3>2. Propriété intellectuelle</h3>
+<p>Tous les contenus — textes, images, logos et graphismes — sont la propriété de Flexion Industrial AG ou de ses concédants et ne peuvent être reproduits sans autorisation écrite préalable.</p>
+<h3>3. Informations sur les produits</h3>
+<p>Les spécifications techniques et la disponibilité des produits peuvent être modifiées sans préavis. Contactez-nous avant toute commande.</p>
+<h3>4. Limitation de responsabilité</h3>
+<p>Flexion Industrial AG ne saurait être tenue responsable de tout dommage direct, indirect ou consécutif résultant de l\'utilisation de ce site.</p>
+<h3>5. Droit applicable</h3>
+<p>Les présentes conditions sont régies par le droit suisse. Tout litige relève de la compétence exclusive des tribunaux suisses.</p>
+<h3>6. Contact</h3>
+<p>Email : <a href="mailto:info@flexionindustrial.com">info@flexionindustrial.com</a></p>'],
+                ],
+            ],
+        ];
+
+        $insPage = $pdo->prepare(
+            'INSERT INTO pages (slug, title, banner_title, content, is_active, sort_order)
+             VALUES (:slug, :title, :btitle, :content, 1, 99)
+             ON DUPLICATE KEY UPDATE slug = slug'
+        );
+        $insPageTr = $pdo->prepare(
+            'INSERT INTO page_translations (page_id, language, title, slug, banner_title, content)
+             VALUES (:pid, :lang, :title, :slug, :btitle, :content)
+             ON DUPLICATE KEY UPDATE page_id = page_id'
+        );
+        $legalInserted = 0;
+        foreach ($legalPages as $lp) {
+            try {
+                $insPage->execute([':slug' => $lp['slug'], ':title' => $lp['title'], ':btitle' => $lp['banner_title'], ':content' => $lp['content']]);
+            } catch (Throwable $e) {
+                // unique: zaten var
+            }
+            $pidStmt = $pdo->prepare('SELECT id FROM pages WHERE slug = ? LIMIT 1');
+            $pidStmt->execute([$lp['slug']]);
+            $pid = $pidStmt->fetchColumn();
+            if (!$pid) continue;
+            // EN page_translation da ekle (slug + title)
+            try {
+                $insPageTr->execute([':pid' => $pid, ':lang' => 'en', ':title' => $lp['title'], ':slug' => $lp['slug'], ':btitle' => $lp['banner_title'], ':content' => $lp['content']]);
+                $legalInserted++;
+            } catch (Throwable $e) {
+                // ignore unique
+            }
+            foreach ($lp['translations'] as $lang => $tr) {
+                try {
+                    $insPageTr->execute([':pid' => $pid, ':lang' => $lang, ':title' => $tr['title'], ':slug' => $tr['slug'], ':btitle' => $tr['banner_title'], ':content' => $tr['content']]);
+                    $legalInserted++;
+                } catch (Throwable $e) {
+                    // ignore unique
+                }
+            }
+        }
+        $results[] = ['label' => 'Legal sayfalar (Privacy/Cookie/Terms) + çeviriler', 'status' => 'ok', 'msg' => "$legalInserted sayfa/çeviri işlendi"];
+    }
+
+    // 8b. Footer reset + seed (Company/Products/Information — Categories sütunu dinamik, kod tarafında çekiliyor)
+    if (mg_table_exists($pdo, $dbName, 'footer_links')) {
+        try {
+            // Eski tüm footer_links ve çevirilerini temizle
+            if (mg_table_exists($pdo, $dbName, 'footer_link_translations')) {
+                $pdo->exec('DELETE FROM footer_link_translations');
+            }
+            $pdo->exec('DELETE FROM footer_links');
+
+            // Yeni footer link'leri: URL'ler dil bağımsız; page_clean_url() runtime'da çevirir
+            $newLinks = [
+                // Company
+                ['company',     'About Us',          'page.php?slug=about-us',           1],
+                ['company',     'Contact',           'page.php?slug=contact',            2],
+                ['company',     'News',              '/news',                             3],
+                // Products
+                ['products',    'All Products',      '/categories',                       1],
+                ['products',    'Catalog',           '/assets/uploads/catalog/flexion-catalog.pdf', 2],
+                // Information
+                ['information', 'Privacy Policy',    'page.php?slug=privacy-policy',     1],
+                ['information', 'Cookie Policy',     'page.php?slug=cookie-policy',      2],
+                ['information', 'Terms & Conditions','page.php?slug=terms-and-conditions',3],
+            ];
+
+            $insFL = $pdo->prepare(
+                'INSERT INTO footer_links (column_key, title, url, sort_order, is_active) VALUES (:ck, :t, :u, :so, 1)'
+            );
+            $insFLT = mg_table_exists($pdo, $dbName, 'footer_link_translations')
+                ? $pdo->prepare('INSERT INTO footer_link_translations (footer_link_id, language, title) VALUES (:fid, :lang, :title)')
+                : null;
+
+            $linkTitles = [
+                'About Us'           => ['de' => 'Über uns',                'it' => 'Chi siamo',              'fr' => 'À propos'],
+                'Contact'            => ['de' => 'Kontakt',                 'it' => 'Contatti',               'fr' => 'Contact'],
+                'News'               => ['de' => 'Neuigkeiten',             'it' => 'Notizie',                'fr' => 'Actualités'],
+                'All Products'       => ['de' => 'Alle Produkte',           'it' => 'Tutti i prodotti',       'fr' => 'Tous les produits'],
+                'Catalog'            => ['de' => 'Katalog',                 'it' => 'Catalogo',               'fr' => 'Catalogue'],
+                'Privacy Policy'     => ['de' => 'Datenschutzerklärung',    'it' => 'Informativa sulla privacy', 'fr' => 'Politique de confidentialité'],
+                'Cookie Policy'      => ['de' => 'Cookie-Richtlinie',       'it' => 'Cookie Policy',          'fr' => 'Politique des cookies'],
+                'Terms & Conditions' => ['de' => 'AGB',                     'it' => 'Termini e condizioni',   'fr' => 'Conditions générales'],
+            ];
+
+            $flSeeded = 0;
+            foreach ($newLinks as [$ck, $t, $u, $so]) {
+                $insFL->execute([':ck' => $ck, ':t' => $t, ':u' => $u, ':so' => $so]);
+                $fid = (int) $pdo->lastInsertId();
+                $flSeeded++;
+                if ($insFLT && isset($linkTitles[$t])) {
+                    foreach ($linkTitles[$t] as $l => $trTitle) {
+                        try {
+                            $insFLT->execute([':fid' => $fid, ':lang' => $l, ':title' => $trTitle]);
+                        } catch (Throwable $e) { }
+                    }
+                }
+            }
+            $results[] = ['label' => 'Footer reset + seed (Company/Products/Information)', 'status' => 'ok', 'msg' => "$flSeeded link eklendi, çeviriler işlendi"];
+        } catch (Throwable $e) {
+            $results[] = ['label' => 'Footer reset + seed', 'status' => 'fail', 'msg' => $e->getMessage()];
+        }
+    }
+
+    // 8c. Footer site_translations (kolon başlıkları)
+    $footerColKeys = [
+        ['footer_col_company',     'en', 'Company'],
+        ['footer_col_company',     'de', 'Unternehmen'],
+        ['footer_col_company',     'it', 'Azienda'],
+        ['footer_col_company',     'fr', 'Entreprise'],
+        ['footer_col_products',    'en', 'Products'],
+        ['footer_col_products',    'de', 'Produkte'],
+        ['footer_col_products',    'it', 'Prodotti'],
+        ['footer_col_products',    'fr', 'Produits'],
+        ['footer_col_categories',  'en', 'Categories'],
+        ['footer_col_categories',  'de', 'Kategorien'],
+        ['footer_col_categories',  'it', 'Categorie'],
+        ['footer_col_categories',  'fr', 'Catégories'],
+        ['footer_col_information', 'en', 'Information'],
+        ['footer_col_information', 'de', 'Informationen'],
+        ['footer_col_information', 'it', 'Informazioni'],
+        ['footer_col_information', 'fr', 'Informations'],
+        ['footer_view_all_categories', 'en', 'View all categories'],
+        ['footer_view_all_categories', 'de', 'Alle Kategorien anzeigen'],
+        ['footer_view_all_categories', 'it', 'Vedi tutte le categorie'],
+        ['footer_view_all_categories', 'fr', 'Voir toutes les catégories'],
+    ];
+    if (mg_table_exists($pdo, $dbName, 'site_translations')) {
+        $stmtFCK = $pdo->prepare(
+            'INSERT INTO site_translations (`key`, `language`, `value`) VALUES (:k, :l, :v)
+             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)'
+        );
+        foreach ($footerColKeys as [$k, $l, $v]) {
+            try { $stmtFCK->execute([':k' => $k, ':l' => $l, ':v' => $v]); } catch (Throwable $e) { }
+        }
+        $results[] = ['label' => 'Footer kolon çevirileri (site_translations)', 'status' => 'ok', 'msg' => count($footerColKeys) . ' key işlendi'];
+    }
+
+    // 9. Varsayılan admin kullanıcısı
     $label = 'Kullanıcı: <code>admin</code>';
     try {
         $cnt = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE username = 'admin'")->fetchColumn();
