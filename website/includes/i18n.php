@@ -48,6 +48,14 @@ function categories_list_url(): string {
     return $prefix !== '' ? $prefix . '/' . $slug : '/' . $slug;
 }
 
+// ── Seçili dilde news liste URL'i ───────────────────────────────────────────
+// EN: /news, DE: /de/neuigkeiten, IT: /it/notizie, FR: /fr/actualites
+function news_base_url(): string {
+    $paths = ['en' => '/news', 'de' => '/de/neuigkeiten', 'it' => '/it/notizie', 'fr' => '/fr/actualites'];
+    $l = defined('CURRENT_LANG') ? CURRENT_LANG : 'en';
+    return $paths[$l] ?? '/news';
+}
+
 // ── İç linki seçili dile göre prefix'le ────────────────────────────────────
 // Harici URL'ler (http/https ile başlayanlar) değişmeden döner.
 // Ana sayfa (index.php, /index.php, /) → her zaman home_url() (temiz URL: / veya /de/).

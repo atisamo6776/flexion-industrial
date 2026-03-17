@@ -73,7 +73,7 @@ $_langFlags  = ['en' => '🇬🇧', 'de' => '🇩🇪', 'it' => '🇮🇹', 'fr'
 <div class="fx-topbar py-1">
     <div class="container d-flex justify-content-between align-items-center">
         <span class="text-muted"><?= e($topbarText) ?></span>
-        <span class="text-muted small">
+        <span class="text-muted small d-none d-md-inline">
             <i class="bi bi-telephone me-1"></i><?= e(get_setting('contact_phone', '+90 ... ... .. ..')) ?>
         </span>
     </div>

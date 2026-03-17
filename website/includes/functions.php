@@ -383,6 +383,10 @@ function page_clean_url(string $url): string
     if ($uTrim === 'categories' || $uTrim === '/categories' || $uTrim === 'categories.php' || $uTrim === '/categories.php') {
         return function_exists('categories_list_url') ? categories_list_url() : '/categories';
     }
+    // News listesi: dil bazlı path'e çevir
+    if ($uTrim === 'news' || $uTrim === '/news' || $uTrim === 'news.php' || $uTrim === '/news.php') {
+        return function_exists('news_base_url') ? news_base_url() : '/news';
+    }
 
     if ($url === '' || strpos($url, 'page.php') === false) {
         return $url;

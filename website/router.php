@@ -86,8 +86,9 @@ if ($route === 'old-news' && $id > 0) {
         $row = $stmt->fetch();
         if ($row) {
             $nSlug = $row['t_slug'] ?: $row['slug'];
-            $newsPrefix = ($lang !== 'en') ? $prefix . '/haberler' : '/haberler';
-            header('Location: ' . $newsPrefix . '/' . rawurlencode($nSlug), true, 301);
+            $newsBaseMap = ['en' => '/news', 'de' => '/de/neuigkeiten', 'it' => '/it/notizie', 'fr' => '/fr/actualites'];
+            $newsBase = $newsBaseMap[$lang] ?? '/news';
+            header('Location: ' . $newsBase . '/' . rawurlencode($nSlug), true, 301);
             exit;
         }
     } catch (Throwable $e) {

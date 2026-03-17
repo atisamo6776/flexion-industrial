@@ -62,13 +62,31 @@ Options -Indexes
     RewriteRule ^(it)/sectors/?$ /it/categorie [R=301,L]
     RewriteRule ^(fr)/sectors/?$ /fr/categories [R=301,L]
 
-    # /de/haberler/haber-slug → news slug
-    RewriteRule ^(de|fr|it)/haberler/([a-z0-9][a-z0-9\-\._%]*)/?$ news.php?slug=$2&lang=$1 [L,QSA]
-    RewriteRule ^haberler/([a-z0-9][a-z0-9\-\._%]*)/?$ news.php?slug=$1 [L,QSA]
+    # News 301: eski haberler URL'lerini yeni yapıya yönlendir
+    RewriteRule ^haberler/?$ /news [R=301,L]
+    RewriteRule ^haberler/([a-z0-9][a-z0-9\-\._%]*)/?$ /news/$1 [R=301,L]
+    RewriteRule ^de/haberler/?$ /de/neuigkeiten [R=301,L]
+    RewriteRule ^de/haberler/([a-z0-9][a-z0-9\-\._%]*)/?$ /de/neuigkeiten/$1 [R=301,L]
+    RewriteRule ^it/haberler/?$ /it/notizie [R=301,L]
+    RewriteRule ^it/haberler/([a-z0-9][a-z0-9\-\._%]*)/?$ /it/notizie/$1 [R=301,L]
+    RewriteRule ^fr/haberler/?$ /fr/actualites [R=301,L]
+    RewriteRule ^fr/haberler/([a-z0-9][a-z0-9\-\._%]*)/?$ /fr/actualites/$1 [R=301,L]
 
-    # /de/haberler  →  news listeleme
-    RewriteRule ^(de|fr|it)/haberler/?$ news.php?lang=$1 [L,QSA]
-    RewriteRule ^haberler/?$ news.php [L,QSA]
+    # News — EN: /news ve /news/<slug>
+    RewriteRule ^news/?$ news.php [L,QSA]
+    RewriteRule ^news/([a-z0-9][a-z0-9\-\._%]*)/?$ news.php?slug=$1 [L,QSA]
+
+    # News — DE: /de/neuigkeiten ve /de/neuigkeiten/<slug>
+    RewriteRule ^de/neuigkeiten/?$ news.php?lang=de [L,QSA]
+    RewriteRule ^de/neuigkeiten/([a-z0-9][a-z0-9\-\._%]*)/?$ news.php?slug=$1&lang=de [L,QSA]
+
+    # News — IT: /it/notizie ve /it/notizie/<slug>
+    RewriteRule ^it/notizie/?$ news.php?lang=it [L,QSA]
+    RewriteRule ^it/notizie/([a-z0-9][a-z0-9\-\._%]*)/?$ news.php?slug=$1&lang=it [L,QSA]
+
+    # News — FR: /fr/actualites ve /fr/actualites/<slug>
+    RewriteRule ^fr/actualites/?$ news.php?lang=fr [L,QSA]
+    RewriteRule ^fr/actualites/([a-z0-9][a-z0-9\-\._%]*)/?$ news.php?slug=$1&lang=fr [L,QSA]
 
     # ÖNCE: /de/xxx veya /it/xxx (tek segment) → router (kategori/sayfa/ürün). İki segment product kuralından önce gelmeli.
     RewriteRule ^(de|fr|it)/([a-z0-9][a-z0-9\-\._%]*)/?$ router.php?_route=cat-or-page&slug=$2&lang=$1 [L,QSA]

@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/includes/i18n.php';
+require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/header.php';
 
 $pdo  = db();
@@ -41,7 +42,7 @@ if ($slug) {
         <div class="container py-5">
             <h1 class="h3 mb-3"><?= e(t('news_not_found', 'News not found')) ?></h1>
             <p class="text-muted"><?= e(t('news_not_found_desc', 'The content you are looking for does not exist or is inactive.')) ?></p>
-            <a href="news" class="btn btn-outline-secondary btn-sm"><?= e(t('news_back', 'Back to news')) ?></a>
+            <a href="<?= e(news_base_url()) ?>" class="btn btn-outline-secondary btn-sm"><?= e(t('news_back', 'Back to news')) ?></a>
         </div>
         <?php
         require_once __DIR__ . '/includes/footer.php';
@@ -85,7 +86,7 @@ if ($slug) {
                             $nSlug  = $nTr['slug']  ?? $n['slug'];
                         ?>
                             <li class="mb-2">
-                                <a href="news/<?= e($nSlug) ?>" class="text-decoration-none">
+                                <a href="<?= e(news_base_url() . '/' . rawurlencode($nSlug)) ?>" class="text-decoration-none">
                                     <?= e($nTitle) ?>
                                 </a>
                             </li>
@@ -127,7 +128,7 @@ try {
                 $nListSlug    = $nListTr['slug']    ?? ($news['slug'] ?? '');
             ?>
                 <div class="col-md-4 fx-animate">
-                    <a href="news/<?= e($nListSlug) ?>" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
+                    <a href="<?= e(news_base_url() . '/' . rawurlencode($nListSlug)) ?>" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
                 <?php if (!empty($news['image'])): ?>
                     <img src="<?= e(asset_url($news['image'])) ?>" class="card-img-top fx-card-img" alt="<?= e($nListTitle) ?>" loading="lazy">
                 <?php else: ?>
