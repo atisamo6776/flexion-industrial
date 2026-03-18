@@ -136,7 +136,7 @@ if (empty($sections)) {
                     <?php if (!$isCover): ?>
                         <div class="col-lg-6 text-center">
                             <?php if ($imgSrc): ?>
-                                <img src="<?= e(asset_url($imgSrc)) ?>" alt="" class="img-fluid rounded-3 shadow-lg">
+                                <img src="<?= e(asset_url($imgSrc)) ?>" alt="" class="img-fluid rounded-3">
                             <?php else: ?>
                                 <div class="bg-dark bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center" style="min-height:280px;">
                                     <span class="text-white-50 small"><?= e(t('home_upload_image', 'Upload image (Admin → Home Sections)')) ?></span>

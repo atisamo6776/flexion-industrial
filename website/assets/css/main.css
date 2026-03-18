@@ -446,6 +446,33 @@ div.fx-card-img {
     flex-shrink: 0;
 }
 
+/* Haber kart görseli — tam fotoğraf, kırpmasız */
+.fx-news-card-img,
+img.fx-news-card-img {
+    display: block;
+    width:  100%  !important;
+    height: 200px !important;
+    object-fit: contain;
+    object-position: center;
+    background: #f8f9fa;
+    flex-shrink: 0;
+}
+
+/* Haber detay ana görseli — sabit boyut, kırpmasız */
+.fx-news-detail-img {
+    display: block;
+    width:  100%  !important;
+    height: 420px !important;
+    object-fit: contain;
+    object-position: center;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+@media (max-width: 768px) {
+    .fx-news-detail-img { height: 260px !important; }
+}
+
 /* Ürün kart görseli — sabit alan, ortalanmış hortum */
 .fx-product-thumb {
     background-color: #ffffff;

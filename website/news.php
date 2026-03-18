@@ -62,7 +62,7 @@ if ($slug) {
                         </p>
                     <?php endif; ?>
                     <?php if (!empty($article['image'])): ?>
-                        <img src="<?= e(asset_url($article['image'])) ?>" alt="<?= e($article['title']) ?>" class="img-fluid rounded-3 mb-4">
+                        <img src="<?= e(asset_url($article['image'])) ?>" alt="<?= e($article['title']) ?>" class="fx-news-detail-img">
                     <?php endif; ?>
                     <div class="text-muted small">
                         <?= sanitize_html($article['content']) ?>
@@ -74,7 +74,7 @@ if ($slug) {
                         <?php
                         $sideNews = [];
                         try {
-                            $side = $pdo->prepare('SELECT id, slug, title FROM news WHERE is_active = 1 AND id <> :id ORDER BY IFNULL(published_at, id) DESC LIMIT 6');
+                            $side = $pdo->prepare('SELECT id, slug, title, image FROM news WHERE is_active = 1 AND id <> :id ORDER BY IFNULL(published_at, id) DESC LIMIT 6');
                             $side->execute([':id' => $article['id']]);
                             $sideNews = $side->fetchAll();
                         } catch (Throwable $e) {
@@ -85,9 +85,15 @@ if ($slug) {
                             $nTitle = $nTr['title'] ?? $n['title'];
                             $nSlug  = $nTr['slug']  ?? $n['slug'];
                         ?>
-                            <li class="mb-2">
-                                <a href="<?= e(news_base_url() . '/' . rawurlencode($nSlug)) ?>" class="text-decoration-none">
-                                    <?= e($nTitle) ?>
+                            <li class="mb-3">
+                                <a href="<?= e(news_base_url() . '/' . rawurlencode($nSlug)) ?>" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
+                                    <?php if (!empty($n['image'])): ?>
+                                        <img src="<?= e(asset_url($n['image'])) ?>" alt="<?= e($nTitle) ?>"
+                                             style="width:60px;height:45px;object-fit:cover;border-radius:4px;flex-shrink:0;">
+                                    <?php else: ?>
+                                        <div style="width:60px;height:45px;background:#f0f0f0;border-radius:4px;flex-shrink:0;"></div>
+                                    <?php endif; ?>
+                                    <span class="small fw-medium"><?= e($nTitle) ?></span>
                                 </a>
                             </li>
                         <?php endforeach; ?>
@@ -130,7 +136,7 @@ try {
                 <div class="col-md-4 fx-animate">
                     <a href="<?= e(news_base_url() . '/' . rawurlencode($nListSlug)) ?>" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
                 <?php if (!empty($news['image'])): ?>
-                    <img src="<?= e(asset_url($news['image'])) ?>" class="card-img-top fx-card-img" alt="<?= e($nListTitle) ?>" loading="lazy">
+                    <img src="<?= e(asset_url($news['image'])) ?>" class="card-img-top fx-news-card-img" alt="<?= e($nListTitle) ?>" loading="lazy">
                 <?php else: ?>
                             <div class="fx-card-img bg-light d-flex align-items-center justify-content-center text-muted">
                                 <i class="bi bi-newspaper fs-2"></i>

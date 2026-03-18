@@ -253,11 +253,50 @@ function smart_lang_switch_url(string $lang): string
     // Ana sayfa
     if ($uri === '/') return $prefix . '/';
 
-    // Çok segmentli URL (eski /cat/prod formatı) — sadece prefix değiştir
     $parts = explode('/', ltrim($uri, '/'));
-    if (count($parts) > 1) return $prefix . $uri;
+
+    // ── Çok segmentli URL: önce news detay kontrolü, sonra genel prefix değişimi
+    if (count($parts) > 1) {
+        $newsSegments = ['news', 'neuigkeiten', 'notizie', 'actualites'];
+        if (in_array($parts[0], $newsSegments, true) && count($parts) === 2) {
+            $newsSlug = rawurldecode($parts[1]);
+            $newsMap  = ['en' => 'news', 'de' => 'neuigkeiten', 'it' => 'notizie', 'fr' => 'actualites'];
+            try {
+                $pdo2 = db();
+                $ns = $pdo2->prepare(
+                    'SELECT n.id FROM news n
+                     LEFT JOIN news_translations nt ON nt.news_id = n.id AND nt.slug = ?
+                     WHERE (nt.news_id IS NOT NULL OR n.slug = ?) AND n.is_active = 1 LIMIT 1'
+                );
+                $ns->execute([$newsSlug, $newsSlug]);
+                $nid = $ns->fetchColumn();
+                if ($nid) {
+                    $ns2 = $pdo2->prepare('SELECT slug FROM news_translations WHERE news_id = ? AND language = ? LIMIT 1');
+                    $ns2->execute([$nid, $lang]);
+                    $translatedSlug = $ns2->fetchColumn() ?: $newsSlug;
+                } else {
+                    $translatedSlug = $newsSlug;
+                }
+            } catch (Throwable $e) {
+                error_log('smart_lang_switch_url news: ' . $e->getMessage());
+                $translatedSlug = $newsSlug;
+            }
+            $targetBase   = $newsMap[$lang] ?? 'news';
+            $targetPrefix = ($lang !== (defined('DEFAULT_LANG') ? DEFAULT_LANG : 'en')) ? '/' . $lang : '';
+            return $targetPrefix . '/' . $targetBase . '/' . rawurlencode($translatedSlug);
+        }
+        return $prefix . $uri;
+    }
 
     $slug = rawurldecode(trim($parts[0]));
+
+    // Özel: news listesi slug'ları
+    $newsMap = ['en' => 'news', 'de' => 'neuigkeiten', 'it' => 'notizie', 'fr' => 'actualites'];
+    if (in_array($slug, array_values($newsMap), true)) {
+        $targetBase   = $newsMap[$lang] ?? 'news';
+        $targetPrefix = ($lang !== (defined('DEFAULT_LANG') ? DEFAULT_LANG : 'en')) ? '/' . $lang : '';
+        return $targetPrefix . '/' . $targetBase;
+    }
 
     // Özel: kategoriler listesi slug'ları
     $categoriesListMap = ['en' => 'categories', 'de' => 'kategorien', 'it' => 'categorie', 'fr' => 'categories'];
