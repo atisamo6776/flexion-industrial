@@ -75,6 +75,12 @@ $resolvedMetaDescription = isset($pageMetaDescription) && trim((string)$pageMeta
         <link rel="alternate" hreflang="<?= e($_hl) ?>" href="<?= e(smart_lang_switch_url($_hl)) ?>">
     <?php endforeach; ?>
     <link rel="alternate" hreflang="x-default" href="<?= e(home_url()) ?>">
+    <link rel="icon" type="image/x-icon" href="<?= e(asset_url('favicon/favicon.ico')) ?>">
+    <link rel="icon" type="image/png" sizes="96x96" href="<?= e(asset_url('favicon/favicon-96x96.png')) ?>">
+    <link rel="icon" type="image/svg+xml" href="<?= e(asset_url('favicon/favicon.svg')) ?>">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?= e(asset_url('favicon/apple-touch-icon.png')) ?>">
+    <link rel="manifest" href="<?= e(asset_url('favicon/site.webmanifest')) ?>">
+    <meta name="theme-color" content="#ffffff">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="<?= e(asset_url('assets/css/main.css')) ?>">
