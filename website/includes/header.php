@@ -339,10 +339,10 @@ function closeMobileMenu() {
     });
 }());
 
-// Header arama otomatik öneri (max 5 ürün)
+// Header arama otomatik öneri (max 5, tek harften itibaren, ürün+kategori)
 (function () {
     var input = document.getElementById('fxSearchInput');
-    var box = document.getElementById('fxSearchSuggest');
+    var box   = document.getElementById('fxSearchSuggest');
     if (!input || !box) return;
     var timer = null;
     var lastQ = '';
@@ -353,16 +353,23 @@ function closeMobileMenu() {
             var safeTitle = (it.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             var safeUrl   = (it.url   || '#').replace(/"/g, '&quot;');
             var safeImg   = (it.image || '').replace(/"/g, '&quot;');
+            var isCat     = it.type === 'category';
+            var phIcon    = isCat ? 'bi-grid' : 'bi-box-seam';
+            var typeClass = isCat ? ' fx-suggest-cat' : ' fx-suggest-prod';
             var imgHtml   = safeImg
                 ? '<img class="fx-search-suggest-thumb" src="' + safeImg + '" alt="" aria-hidden="true">'
-                : '<span class="fx-search-suggest-thumb-ph"><i class="bi bi-box-seam"></i></span>';
-            return '<a class="fx-search-suggest-item" href="' + safeUrl + '">' + imgHtml + '<span class="fx-search-suggest-name">' + safeTitle + '</span></a>';
+                : '<span class="fx-search-suggest-thumb-ph"><i class="bi ' + phIcon + '"></i></span>';
+            return '<a class="fx-search-suggest-item' + typeClass + '" href="' + safeUrl + '">'
+                + imgHtml
+                + '<span class="fx-search-suggest-name">' + safeTitle + '</span>'
+                + (isCat ? '<span class="fx-search-suggest-badge">Category</span>' : '')
+                + '</a>';
         }).join('');
         box.classList.remove('d-none');
     }
     input.addEventListener('input', function () {
         var q = input.value.trim();
-        if (q.length < 2) { hide(); return; }
+        if (q.length < 1) { hide(); return; }
         if (q === lastQ) return;
         lastQ = q;
         clearTimeout(timer);
@@ -371,9 +378,9 @@ function closeMobileMenu() {
                 .then(function (r) { return r.ok ? r.json() : []; })
                 .then(function (data) { render(Array.isArray(data) ? data.slice(0, 5) : []); })
                 .catch(function () { hide(); });
-        }, 220);
+        }, 180);
     });
-    input.addEventListener('blur', function () { setTimeout(hide, 150); });
+    input.addEventListener('blur', function () { setTimeout(hide, 180); });
     input.addEventListener('focus', function () { if (box.innerHTML.trim() !== '') box.classList.remove('d-none'); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hide(); });
 }());

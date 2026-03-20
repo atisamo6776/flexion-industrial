@@ -125,22 +125,34 @@ $sortOptions = [
                 <p class="text-muted"><?= e(t('search_no_results', 'no results found.')) ?></p>
             <?php endif; ?>
 
-            <!-- Kategoriler -->
+            <!-- Kategoriler — ana sayfa kart görünümüyle birebir -->
             <?php if (!empty($resultsCats)): ?>
                 <h2 class="h6 text-uppercase text-muted mb-3 fw-semibold"><?= e(t('search_categories_heading', 'Categories')) ?></h2>
-                <div class="row g-2 mb-4">
+                <div class="row g-3 mb-5">
                     <?php foreach ($resultsCats as $cat): ?>
                         <?php $catHref = localized_url('/' . ltrim((string)($cat['slug'] ?? ''), '/')); ?>
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <a href="<?= e($catHref) ?>" class="fx-search-cat-chip text-decoration-none">
-                                <?= e((string)$cat['name']) ?>
+                        <div class="col-6 col-sm-4 col-md-3">
+                            <a href="<?= e($catHref) ?>" class="card h-100 text-decoration-none text-dark border-0 overflow-hidden">
+                                <?php if (!empty($cat['image'])): ?>
+                                    <img src="<?= e(asset_url((string)$cat['image'])) ?>"
+                                         class="fx-card-img"
+                                         alt="<?= e((string)$cat['name']) ?>"
+                                         loading="lazy">
+                                <?php else: ?>
+                                    <div class="fx-card-img d-flex align-items-center justify-content-center bg-light">
+                                        <i class="bi bi-grid text-muted fs-2"></i>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="card-body py-2 px-3">
+                                    <h3 class="h6 mb-0 fw-semibold"><?= e((string)$cat['name']) ?></h3>
+                                </div>
                             </a>
                         </div>
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
 
-            <!-- Ürünler -->
+            <!-- Ürünler — mevcut ürün kartı sınıflarıyla birebir -->
             <?php if (!empty($resultsProducts)): ?>
                 <h2 class="h6 text-uppercase text-muted mb-3 fw-semibold"><?= e(t('search_products_heading', 'Products')) ?></h2>
                 <div class="row g-3">
@@ -148,19 +160,23 @@ $sortOptions = [
                         <?php $prodSlug = (string)($product['slug'] ?? ''); ?>
                         <div class="col-6 col-md-4 col-lg-3">
                             <a href="<?= e($prodSlug !== '' ? product_url($prodSlug) : 'product?id=' . (int)$product['id']) ?>"
-                               class="fx-search-product-card text-decoration-none">
-                                <div class="fx-search-product-img">
-                                    <?php if (!empty($product['main_image'])): ?>
+                               class="card h-100 text-decoration-none text-dark border-0 overflow-hidden">
+                                <?php if (!empty($product['main_image'])): ?>
+                                    <div class="fx-product-thumb">
                                         <img src="<?= e(asset_url((string)$product['main_image'])) ?>"
-                                             alt="<?= e((string)$product['name']) ?>" loading="lazy">
-                                    <?php else: ?>
-                                        <i class="bi bi-box-seam text-muted" style="font-size:1.8rem;"></i>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="fx-search-product-body">
-                                    <p class="fx-search-product-name"><?= e((string)$product['name']) ?></p>
+                                             class="fx-product-thumb-img"
+                                             alt="<?= e((string)$product['name']) ?>"
+                                             loading="lazy">
+                                    </div>
+                                <?php else: ?>
+                                    <div class="fx-product-thumb-placeholder">
+                                        <i class="bi bi-box-seam fs-1 text-muted"></i>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="card-body py-2 px-3">
+                                    <h3 class="h6 fw-semibold mb-1"><?= e((string)$product['name']) ?></h3>
                                     <?php if (!empty($product['code'])): ?>
-                                        <p class="fx-search-product-code"><?= e((string)$product['code']) ?></p>
+                                        <p class="small text-muted mb-0"><?= e((string)$product['code']) ?></p>
                                     <?php endif; ?>
                                 </div>
                             </a>

@@ -511,25 +511,26 @@ img.fx-news-card-img {
     color: #111827;
 }
 .fx-search-suggest-thumb {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     flex-shrink: 0;
     object-fit: contain;
-    background: #f4f4f4;
-    border-radius: 5px;
-    border: 1px solid #eee;
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    padding: 2px;
 }
 .fx-search-suggest-thumb-ph {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     flex-shrink: 0;
-    background: #f4f4f4;
-    border-radius: 5px;
-    border: 1px solid #eee;
+    background: #f9fafb;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ccc;
+    color: #9ca3af;
     font-size: .9rem;
 }
 .fx-search-suggest-name {
@@ -538,71 +539,26 @@ img.fx-news-card-img {
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 500;
-}
-
-/* Arama sonuç sayfası — kategori chip */
-.fx-search-cat-chip {
-    display: block;
-    padding: .4rem .75rem;
-    background: #f3f4f6;
-    border-radius: .4rem;
-    color: #374151;
-    font-size: .85rem;
-    font-weight: 500;
-    text-align: center;
-    transition: background .2s, color .2s;
-}
-.fx-search-cat-chip:hover {
-    background: var(--fx-red, #dc2626);
-    color: #fff;
-}
-
-/* Arama sonuç sayfası — ürün kartı */
-.fx-search-product-card {
-    display: block;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: .6rem;
-    overflow: hidden;
-    transition: box-shadow .2s, border-color .2s;
     color: #111827;
 }
-.fx-search-product-card:hover {
-    box-shadow: 0 4px 14px rgba(0,0,0,.10);
-    border-color: #d1d5db;
-    color: #111827;
-}
-.fx-search-product-img {
-    height: 150px;
-    background: #f9fafb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-bottom: 1px solid #f0f0f0;
-}
-.fx-search-product-img img {
-    max-width: 100%;
-    max-height: 130px;
-    object-fit: contain;
-    padding: .5rem;
-}
-.fx-search-product-body {
-    padding: .6rem .75rem .75rem;
-}
-.fx-search-product-name {
-    font-size: .875rem;
+.fx-search-suggest-badge {
+    flex-shrink: 0;
+    font-size: .68rem;
     font-weight: 600;
-    margin-bottom: .15rem;
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.fx-search-product-code {
-    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
     color: #6b7280;
-    margin-bottom: 0;
+    background: #f3f4f6;
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: .25rem;
+}
+/* Kategori satırı: hafif sol vurgu */
+.fx-search-suggest-item.fx-suggest-cat {
+    background: #fafafa;
+}
+.fx-search-suggest-item.fx-suggest-cat:hover {
+    background: #f3f4f6;
 }
 
 /* Ürün kart görseli — sabit alan, ortalanmış hortum */
