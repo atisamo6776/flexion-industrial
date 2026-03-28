@@ -731,21 +731,136 @@ img.fx-news-card-img {
 }
 
 /* ===================================================
-   Ürün Açıklama (H2/H3 Kırmızı Başlıklar)
+   Ürün Açıklama (Referans görsele yakın tipografi)
    =================================================== */
+.product-description {
+    font-size: .94rem;
+    line-height: 1.65;
+    color: #1f2937;
+}
 .product-description h2,
 .product-description h3 {
     color: var(--flexion-red);
-    font-size: 1rem;
+    font-size: .9rem;
     font-weight: 700;
-    margin-top: 1.25rem;
-    margin-bottom: .35rem;
+    margin-top: 1.5rem;
+    margin-bottom: .4rem;
     text-transform: uppercase;
-    letter-spacing: .04em;
+    letter-spacing: .07em;
+    line-height: 1.3;
 }
-.product-description p  { margin-bottom: .5rem;  font-size: .92rem; }
+/* Referanstaki "Agricultural spraying hose" tarzı ilk paragraf alt başlık */
+.product-description > p:first-child {
+    font-weight: 600;
+    font-size: .97rem;
+    color: #111827;
+    margin-bottom: .6rem;
+}
+/* h4: "Tube:", "Reinforcement:" gibi label başlıkları */
+.product-description h4 {
+    font-size: .88rem;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 1rem;
+    margin-bottom: .25rem;
+    letter-spacing: .02em;
+}
+.product-description p  { margin-bottom: .45rem; font-size: .92rem; }
+/* p içindeki strong: "Tube: ..." satırları referanstaki gibi yarı kalın etiket */
+.product-description p strong,
+.product-description li strong {
+    font-weight: 700;
+    color: #111827;
+}
 .product-description ul,
-.product-description ol { font-size: .92rem; padding-left: 1.25rem; margin-bottom: .75rem; }
+.product-description ol { font-size: .92rem; padding-left: 1.25rem; margin-bottom: .75rem; margin-top: .2rem; }
+.product-description li { margin-bottom: .2rem; }
+/* Bölümler arası soluk ayraç — isteğe bağlı, kaldırılabilir */
+.product-description hr {
+    border: none;
+    border-top: 1px solid #f0f0f0;
+    margin: 1rem 0;
+}
+
+/* ---- Ürün detay CTA satırı (Request + teknik doküman yan yana) ---- */
+.fx-prod-cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: .65rem;
+}
+.fx-prod-cta-row .fx-prod-request-btn {
+    flex: 1 1 200px;
+    width: auto;
+    min-width: 0;
+}
+.fx-prod-cta-row .fx-prod-doc-btn {
+    flex: 1 1 180px;
+    justify-content: center;
+}
+
+/* ---- Ürün detay CTA butonları (pill, referans uyumlu) ---- */
+.fx-prod-doc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .55rem 1.2rem;
+    border-radius: 50px;
+    border: 1.5px solid #d1d5db;
+    background: #f9fafb;
+    color: #374151;
+    font-size: .875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: border-color .18s, background .18s, color .18s;
+    white-space: nowrap;
+}
+.fx-prod-doc-btn:hover {
+    border-color: #9ca3af;
+    background: #f3f4f6;
+    color: #111827;
+}
+.fx-prod-doc-btn .bi { font-size: .95rem; }
+.fx-prod-request-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    width: 100%;
+    padding: .75rem 1.5rem;
+    border-radius: 50px;
+    border: none;
+    background: var(--flexion-red);
+    color: #fff;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .18s, transform .15s, box-shadow .18s;
+    text-decoration: none;
+}
+.fx-prod-request-btn:hover {
+    background: #c0101c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(230,20,33,.28);
+    color: #fff;
+}
+.fx-prod-doc-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-bottom: 1rem;
+}
+.fx-prod-docs-more {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .82rem;
+    color: var(--flexion-red);
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: .25rem;
+}
+.fx-prod-docs-more:hover { color: #c0101c; }
 
 /* Regulations (sol sütun altı) */
 .fx-regulation-badge {

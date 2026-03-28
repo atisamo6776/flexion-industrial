@@ -107,9 +107,20 @@ try {
             $product['short_description'] = $prodTr['short_description'] ?? $product['short_description'];
             $product['description']       = $prodTr['description'] ?? $product['description'];
         }
-        // Kategori adını çevir
+        // Kategori adı + slug çevir
         $catTr = get_translation('category_translations', 'category_id', (int)$product['category_id']);
         if ($catTr && $catTr['name']) $product['category_name'] = $catTr['name'];
+        // Lokalize kategori slug: çeviri slug'ı veya categories.slug (ürün slug'ı asla kullanılmaz)
+        $product['category_slug_localized'] = ($catTr && !empty($catTr['slug'])) ? $catTr['slug'] : '';
+        if ($product['category_slug_localized'] === '') {
+            try {
+                $cSlugStmt = $pdo->prepare('SELECT slug FROM categories WHERE id = ? LIMIT 1');
+                $cSlugStmt->execute([(int)$product['category_id']]);
+                $product['category_slug_localized'] = (string)($cSlugStmt->fetchColumn() ?: '');
+            } catch (Throwable $_e) {
+                $product['category_slug_localized'] = '';
+            }
+        }
     }
 } catch (Throwable $e) {
     error_log('[flexion] product query failed: ' . $e->getMessage());
@@ -194,12 +205,16 @@ try {
     <div class="container">
 
         <!-- Breadcrumb -->
+        <?php
+            $_catLocSlug = $product['category_slug_localized'] ?? '';
+            $_catUrl = $_catLocSlug !== '' ? localized_url('/' . $_catLocSlug) : categories_list_url();
+        ?>
         <nav class="mb-4" aria-label="breadcrumb">
             <ol class="breadcrumb small">
                 <li class="breadcrumb-item"><a href="<?= e(home_url()) ?>"><?= e(t('nav_home', 'Home')) ?></a></li>
                 <li class="breadcrumb-item"><a href="<?= e(categories_list_url()) ?>"><?= e(t('nav_products', 'Products')) ?></a></li>
                 <li class="breadcrumb-item">
-                    <a href="category?id=<?= e((string)$product['category_id']) ?>"><?= e($product['category_name']) ?></a>
+                    <a href="<?= e($_catUrl) ?>"><?= e($product['category_name']) ?></a>
                 </li>
                 <li class="breadcrumb-item active" aria-current="page"><?= e($product['name']) ?></li>
             </ol>
@@ -267,9 +282,9 @@ try {
             <!-- ═══════════ SAĞ: Bilgi, doküman, buton ═══════════ -->
             <div class="col-12 col-md-7 fx-animate" data-delay="80">
 
-                <!-- Kategori yolu (referans: / Food /) -->
+                <!-- Kategori yolu (referans: / Water /) -->
                 <p class="small text-muted mb-1">
-                    / <a href="category?id=<?= e((string)$product['category_id']) ?>"
+                    / <a href="<?= e($_catUrl) ?>"
                          class="text-muted text-decoration-none"><?= e($product['category_name']) ?></a> /
                 </p>
 
@@ -280,34 +295,58 @@ try {
                 <?php endif; ?>
 
                 <?php if (!empty($product['short_description'])): ?>
-                    <p class="mb-3 text-secondary"><?= e($product['short_description']) ?></p>
+                    <p class="mb-3 fw-semibold text-dark" style="font-size:.97rem;"><?= e($product['short_description']) ?></p>
                 <?php endif; ?>
 
-                <!-- Uzun açıklama: kısa açıklama ile butonlar arasında (referans görseli gibi) -->
+                <!-- Uzun açıklama: kırmızı başlıklar + metin (referans görünümü) -->
                 <?php if (!empty($product['description'])): ?>
                     <div class="product-description mb-4">
                         <?= sanitize_html($product['description']) ?>
                     </div>
                 <?php endif; ?>
 
-                <!-- Doküman Butonları (referans: Technical sheet ↓, Other documents ↓) -->
-                <?php if (!empty($documents)): ?>
-                    <div class="d-flex flex-wrap gap-2 mb-4">
-                        <?php foreach ($documents as $doc): ?>
-                            <a href="<?= e(asset_url($doc['file_path'])) ?>" target="_blank" rel="noopener"
-                               class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2">
-                                <i class="bi bi-file-earmark-arrow-down"></i>
-                                <?= e($doc['title']) ?>
-                            </a>
-                        <?php endforeach; ?>
+                <?php
+                $firstDoc = null;
+                $restDocs = [];
+                if (!empty($documents)) {
+                    $firstDoc = $documents[0];
+                    $restDocs = array_slice($documents, 1);
+                }
+                ?>
+                <!-- CTA satırı: Request information + ilk doküman (referans sıra) -->
+                <div class="fx-prod-cta-row mb-2">
+                    <button type="button" class="fx-prod-request-btn"
+                            data-bs-toggle="modal" data-bs-target="#inquiryModal">
+                        <i class="bi bi-envelope"></i>
+                        <?= e(t('prod_inquiry_title', 'Request Information')) ?>
+                    </button>
+                    <?php if ($firstDoc): ?>
+                        <a href="<?= e(asset_url($firstDoc['file_path'])) ?>" target="_blank" rel="noopener"
+                           class="fx-prod-doc-btn">
+                            <span><?= e($firstDoc['title'] ?: t('prod_technical_sheet', 'Technical sheet')) ?></span>
+                            <i class="bi bi-download ms-1"></i>
+                        </a>
+                    <?php endif; ?>
+                </div>
+                <?php if (!empty($restDocs)): ?>
+                    <p class="mb-2">
+                        <a class="fx-prod-docs-more" data-bs-toggle="collapse" href="#fxProdMoreDocs" role="button" aria-expanded="false" aria-controls="fxProdMoreDocs">
+                            <i class="bi bi-arrow-down-right"></i>
+                            <?= e(t('prod_see_all_documents', 'See all documents')) ?>
+                        </a>
+                    </p>
+                    <div class="collapse mb-3" id="fxProdMoreDocs">
+                        <ul class="list-unstyled small mb-0 ps-1">
+                            <?php foreach ($restDocs as $doc): ?>
+                                <li class="mb-1">
+                                    <a href="<?= e(asset_url($doc['file_path'])) ?>" target="_blank" rel="noopener" class="text-decoration-none">
+                                        <i class="bi bi-file-earmark-pdf text-danger me-1"></i><?= e($doc['title']) ?>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
                     </div>
                 <?php endif; ?>
-
-                <!-- Bilgi Al Butonu -->
-                <button type="button" class="btn btn-primary w-100 py-2 mt-2"
-                        data-bs-toggle="modal" data-bs-target="#inquiryModal">
-                    <i class="bi bi-envelope me-2"></i><?= e(t('prod_inquiry_title', 'Request Information')) ?>
-                </button>
             </div>
         </div>
 
