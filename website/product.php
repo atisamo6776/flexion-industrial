@@ -294,24 +294,23 @@ try {
                             </div>
                         <?php endif; ?>
 
-                        <!-- PDF Dokümanlar: 2 sütunlu ızgara, tümü buton -->
-                        <?php if (!empty($documents)): ?>
-                            <div class="d-flex flex-wrap gap-2 mb-4">
+                        <!-- Kapsül butonlar: bilgi al + doküman indirme -->
+                        <div class="fx-product-pill-actions mb-4">
+                            <button type="button"
+                                    class="btn btn-primary fx-btn-pill-inquiry w-100"
+                                    data-bs-toggle="modal" data-bs-target="#inquiryModal">
+                                <?= e(t('prod_inquiry_title', 'Request Information')) ?>
+                            </button>
+                            <?php if (!empty($documents)): ?>
                                 <?php foreach ($documents as $doc): ?>
                                     <a href="<?= e(asset_url($doc['file_path'])) ?>" target="_blank" rel="noopener"
-                                       class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2">
-                                        <i class="bi bi-file-earmark-arrow-down"></i>
-                                        <?= e($doc['title']) ?>
+                                       class="fx-btn-pill-doc">
+                                        <span class="text-truncate"><?= e($doc['title']) ?></span>
+                                        <i class="bi bi-download" aria-hidden="true"></i>
                                     </a>
                                 <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <!-- Bilgi Al Butonu -->
-                        <button type="button" class="btn btn-primary w-100 py-2 mt-2"
-                                data-bs-toggle="modal" data-bs-target="#inquiryModal">
-                            <i class="bi bi-envelope me-2"></i><?= e(t('prod_inquiry_title', 'Request Information')) ?>
-                        </button>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
                     <!-- Dikey ikon sütunu (varsa) -->

@@ -81,6 +81,56 @@ body {
     border-color:     #c0101c;
 }
 
+/* Ürün detay — kapsül (pill) aksiyon butonları */
+.fx-product-pill-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.fx-btn-pill-inquiry.btn-primary {
+    border-radius: 9999px;
+    border: none;
+    box-shadow: none;
+    padding: 0.875rem 1.75rem;
+    font-weight: 500;
+}
+.fx-btn-pill-inquiry.btn-primary:hover,
+.fx-btn-pill-inquiry.btn-primary:focus {
+    transform: none;
+    box-shadow: none;
+}
+.fx-btn-pill-doc {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    background-color: #ececee;
+    color: #111;
+    border: none;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color .2s, color .2s;
+}
+.fx-btn-pill-doc:hover {
+    background-color: #e2e4e8;
+    color: #111;
+}
+.fx-btn-pill-doc:focus-visible {
+    outline: 2px solid var(--flexion-red);
+    outline-offset: 2px;
+}
+.fx-btn-pill-doc > span {
+    min-width: 0;
+}
+.fx-btn-pill-doc .bi-download {
+    flex-shrink: 0;
+    font-size: 1.125rem;
+}
+
 /* Utility */
 .text-primary  { color: var(--flexion-red) !important; }
 .bg-primary    { background-color: var(--flexion-red) !important; }
