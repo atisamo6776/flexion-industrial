@@ -297,7 +297,7 @@ try {
                         <!-- Kapsül butonlar: bilgi al + doküman indirme -->
                         <div class="fx-product-pill-actions mb-4">
                             <button type="button"
-                                    class="btn btn-primary fx-btn-pill-inquiry w-100"
+                                    class="btn btn-primary fx-btn-pill-inquiry"
                                     data-bs-toggle="modal" data-bs-target="#inquiryModal">
                                 <?= e(t('prod_inquiry_title', 'Request Information')) ?>
                             </button>
