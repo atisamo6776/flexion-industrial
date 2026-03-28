@@ -747,7 +747,103 @@ img.fx-news-card-img {
 .product-description ul,
 .product-description ol { font-size: .92rem; padding-left: 1.25rem; margin-bottom: .75rem; }
 
-/* Regulations (sol sütun altı) */
+/* ---- PDF 2 sütun ızgara ---- */
+.fx-doc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .55rem;
+}
+@media (max-width: 480px) {
+    .fx-doc-grid { grid-template-columns: 1fr; }
+}
+.fx-doc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .6rem .85rem;
+    border-radius: 8px;
+    border: 1.5px solid #d1d5db;
+    background: #f9fafb;
+    color: #374151;
+    font-size: .82rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: border-color .18s, background .18s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fx-doc-btn:hover {
+    border-color: #9ca3af;
+    background: #f3f4f6;
+    color: #111827;
+}
+.fx-doc-btn .bi { font-size: .9rem; flex-shrink: 0; }
+
+/* ---- Dikey ikon sütunu (sağ sütun) ---- */
+.fx-icon-column {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+    padding-top: 2.5rem;
+}
+.fx-icon-cell {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.fx-icon-cell img {
+    max-width: 44px;
+    max-height: 44px;
+    object-fit: contain;
+}
+
+/* ---- Regülasyon rozet görseli (sol sütun) ---- */
+.fx-reg-badge {
+    width: 64px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+}
+.fx-reg-badge img {
+    max-width: 58px;
+    max-height: 42px;
+    object-fit: contain;
+}
+
+/* ---- Regülasyon açıklama bloğu (tam genişlik, sayfanın alt kısmı) ---- */
+.fx-reg-desc-block {
+    border-top: 2px solid var(--flexion-red);
+    padding-top: 1.25rem;
+    font-size: .92rem;
+    line-height: 1.7;
+    color: #374151;
+}
+.fx-reg-desc-block h2,
+.fx-reg-desc-block h3 {
+    color: var(--flexion-red);
+    font-size: .95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-top: 1.25rem;
+    margin-bottom: .4rem;
+}
+.fx-reg-desc-block p { margin-bottom: .5rem; }
+.fx-reg-desc-block ul,
+.fx-reg-desc-block ol { padding-left: 1.25rem; margin-bottom: .75rem; }
+
+/* Regulations (eski .fx-regulation-badge — geriye dönük uyum) */
 .fx-regulation-badge {
     display: inline-flex;
     align-items: center;

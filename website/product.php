@@ -129,14 +129,34 @@ if (!$product) {
     exit;
 }
 
-// Regulations
-$regulations = [];
+// İkonlar (kütüphaneden seçilenler)
+$pickedIcons = [];
 try {
-    $stmt = $pdo->prepare('SELECT * FROM product_regulations WHERE product_id = :pid AND is_active = 1 ORDER BY sort_order ASC, id ASC');
+    $stmt = $pdo->prepare(
+        'SELECT ci.* FROM catalog_product_icons ci
+         JOIN product_icon_picks pip ON pip.icon_id = ci.id
+         WHERE pip.product_id = :pid AND ci.is_active = 1
+         ORDER BY pip.sort_order ASC, pip.id ASC'
+    );
     $stmt->execute([':pid' => $productId]);
-    $regulations = $stmt->fetchAll();
+    $pickedIcons = $stmt->fetchAll();
 } catch (Throwable $e) {
-    error_log('[flexion] product regulations query failed: ' . $e->getMessage());
+    error_log('[flexion] product icons query failed: ' . $e->getMessage());
+}
+
+// Regülasyon görselleri (kütüphaneden seçilenler)
+$pickedRegs = [];
+try {
+    $stmt = $pdo->prepare(
+        'SELECT cri.* FROM catalog_regulation_images cri
+         JOIN product_regulation_picks prp ON prp.regulation_image_id = cri.id
+         WHERE prp.product_id = :pid AND cri.is_active = 1
+         ORDER BY prp.sort_order ASC, prp.id ASC'
+    );
+    $stmt->execute([':pid' => $productId]);
+    $pickedRegs = $stmt->fetchAll();
+} catch (Throwable $e) {
+    error_log('[flexion] product regulation images query failed: ' . $e->getMessage());
 }
 
 // Spec tables + rows
@@ -206,14 +226,13 @@ try {
         </nav>
 
         <div class="row g-4 mb-5">
-            <!-- ═══════════ SOL: Ana görsel + Küçük resimler + Regülasyonlar ═══════════ -->
+            <!-- ═══════════ SOL: Ana görsel + Regülasyon görselleri ═══════════ -->
             <div class="col-12 col-md-5 fx-animate">
 
-                <!-- Ana görsel -->
+                <!-- Ana görsel (tek; galeri yok) -->
                 <?php if (!empty($product['main_image'])): ?>
                     <div class="fx-product-main">
-                        <img id="main-product-img"
-                             src="<?= e(asset_url($product['main_image'])) ?>"
+                        <img src="<?= e(asset_url($product['main_image'])) ?>"
                              alt="<?= e($product['name']) ?>"
                              class="fx-product-main-img">
                     </div>
@@ -226,90 +245,101 @@ try {
                     </div>
                 <?php endif; ?>
 
-                <!-- Küçük resim galerisi -->
-                <?php if (!empty($extraImages) || !empty($product['main_image'])): ?>
-                    <div class="d-flex gap-2 mt-3 flex-wrap">
-                        <?php if (!empty($product['main_image'])): ?>
-                            <img src="<?= e(asset_url($product['main_image'])) ?>"
-                                 class="gallery-thumb"
-                                 loading="lazy"
-                                 onclick="document.getElementById('main-product-img').src=this.src">
-                        <?php endif; ?>
-                        <?php foreach ($extraImages as $eImg): ?>
-                            <img src="<?= e(asset_url($eImg['image'])) ?>"
-                                 class="gallery-thumb"
-                                 loading="lazy"
-                                 onclick="document.getElementById('main-product-img').src=this.src">
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Regülasyonlar & Sertifikalar (referans: sol sütun altı) -->
-                <?php if ($regulations): ?>
+                <!-- Regülasyon / Sertifika görselleri -->
+                <?php if ($pickedRegs): ?>
                     <div class="mt-4 pt-3 border-top">
                         <p class="small text-uppercase text-muted fw-semibold mb-2" style="font-size:.72rem;letter-spacing:.06em;">
                             <?= e(t('prod_regs_title', 'Regulations &amp; Certifications')) ?>
                         </p>
                         <div class="d-flex flex-wrap gap-2">
-                            <?php foreach ($regulations as $reg): ?>
-                                <span class="fx-regulation-badge">
-                                    <?php if (!empty($reg['icon'])): ?>
-                                        <img src="<?= e(asset_url($reg['icon'])) ?>" alt="<?= e($reg['title']) ?>">
-                                    <?php endif; ?>
-                                    <?= e($reg['title']) ?>
-                                </span>
+                            <?php foreach ($pickedRegs as $reg): ?>
+                                <div class="fx-reg-badge">
+                                    <img src="<?= e(asset_url($reg['image_path'])) ?>"
+                                         alt="<?= e($reg['admin_label']) ?>"
+                                         loading="lazy">
+                                </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
                 <?php endif; ?>
             </div>
 
-            <!-- ═══════════ SAĞ: Bilgi, doküman, buton ═══════════ -->
+            <!-- ═══════════ SAĞ: İkonlar + Bilgi, doküman, buton ═══════════ -->
             <div class="col-12 col-md-7 fx-animate" data-delay="80">
+                <div class="d-flex gap-3">
 
-                <!-- Kategori yolu (referans: / Food /) -->
-                <p class="small text-muted mb-1">
-                    / <a href="category?id=<?= e((string)$product['category_id']) ?>"
-                         class="text-muted text-decoration-none"><?= e($product['category_name']) ?></a> /
-                </p>
+                    <!-- İçerik sütunu -->
+                    <div class="flex-grow-1 min-w-0">
 
-                <h1 class="h2 fw-bold mb-1"><?= e($product['name']) ?></h1>
+                        <!-- Kategori yolu -->
+                        <p class="small text-muted mb-1">
+                            / <a href="category?id=<?= e((string)$product['category_id']) ?>"
+                                 class="text-muted text-decoration-none"><?= e($product['category_name']) ?></a> /
+                        </p>
 
-                <?php if (!empty($product['code'])): ?>
-                    <p class="small text-muted mb-3"><?= e(t('prod_code_label', 'Product code')) ?>: <strong><?= e($product['code']) ?></strong></p>
-                <?php endif; ?>
+                        <h1 class="h2 fw-bold mb-1"><?= e($product['name']) ?></h1>
 
-                <?php if (!empty($product['short_description'])): ?>
-                    <p class="mb-3 text-secondary"><?= e($product['short_description']) ?></p>
-                <?php endif; ?>
+                        <?php if (!empty($product['code'])): ?>
+                            <p class="small text-muted mb-3"><?= e(t('prod_code_label', 'Product code')) ?>: <strong><?= e($product['code']) ?></strong></p>
+                        <?php endif; ?>
 
-                <!-- Uzun açıklama: kısa açıklama ile butonlar arasında (referans görseli gibi) -->
-                <?php if (!empty($product['description'])): ?>
-                    <div class="product-description mb-4">
-                        <?= sanitize_html($product['description']) ?>
+                        <?php if (!empty($product['short_description'])): ?>
+                            <p class="mb-3 text-secondary"><?= e($product['short_description']) ?></p>
+                        <?php endif; ?>
+
+                        <!-- Uzun açıklama -->
+                        <?php if (!empty($product['description'])): ?>
+                            <div class="product-description mb-4">
+                                <?= sanitize_html($product['description']) ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- PDF Dokümanlar: 2 sütunlu ızgara, tümü buton -->
+                        <?php if (!empty($documents)): ?>
+                            <div class="fx-doc-grid mb-4">
+                                <?php foreach ($documents as $doc): ?>
+                                    <a href="<?= e(asset_url($doc['file_path'])) ?>" target="_blank" rel="noopener"
+                                       class="fx-doc-btn">
+                                        <i class="bi bi-file-earmark-arrow-down"></i>
+                                        <?= e($doc['title']) ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Bilgi Al Butonu -->
+                        <button type="button" class="btn btn-primary w-100 py-2 mt-2"
+                                data-bs-toggle="modal" data-bs-target="#inquiryModal">
+                            <i class="bi bi-envelope me-2"></i><?= e(t('prod_inquiry_title', 'Request Information')) ?>
+                        </button>
                     </div>
-                <?php endif; ?>
 
-                <!-- Doküman Butonları (referans: Technical sheet ↓, Other documents ↓) -->
-                <?php if (!empty($documents)): ?>
-                    <div class="d-flex flex-wrap gap-2 mb-4">
-                        <?php foreach ($documents as $doc): ?>
-                            <a href="<?= e(asset_url($doc['file_path'])) ?>" target="_blank" rel="noopener"
-                               class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2">
-                                <i class="bi bi-file-earmark-arrow-down"></i>
-                                <?= e($doc['title']) ?>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Bilgi Al Butonu -->
-                <button type="button" class="btn btn-primary w-100 py-2 mt-2"
-                        data-bs-toggle="modal" data-bs-target="#inquiryModal">
-                    <i class="bi bi-envelope me-2"></i><?= e(t('prod_inquiry_title', 'Request Information')) ?>
-                </button>
+                    <!-- Dikey ikon sütunu (varsa) -->
+                    <?php if ($pickedIcons): ?>
+                        <div class="fx-icon-column flex-shrink-0">
+                            <?php foreach ($pickedIcons as $icon): ?>
+                                <div class="fx-icon-cell">
+                                    <img src="<?= e(asset_url($icon['image_path'])) ?>"
+                                         alt="<?= e($icon['admin_label']) ?>"
+                                         loading="lazy">
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
+
+        <!-- Regülasyon açıklaması (tam genişlik, üründe doldurulmuşsa) -->
+        <?php if (!empty($product['regulation_description'])): ?>
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="fx-reg-desc-block">
+                    <?= sanitize_html($product['regulation_description']) ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Teknik Özellikler Tabloları -->
         <?php if ($specTables): ?>

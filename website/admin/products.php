@@ -57,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
+                $regDesc = trim($_POST['regulation_description'] ?? '') ?: null;
                 if ($id > 0) {
                     $imgSql = $mainImage ? ', main_image = :img' : '';
                     $params = [
@@ -66,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':code'   => $code ?: null,
                         ':sdesc'  => $shortD ?: null,
                         ':desc'   => $desc ?: null,
+                        ':regdesc'=> $regDesc,
                         ':active' => $active,
                         ':id'     => $id,
                     ];
@@ -74,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $pdo->prepare("UPDATE products SET category_id = :cat, name = :name, slug = :slug,
                                 code = :code, short_description = :sdesc, description = :desc,
+                                regulation_description = :regdesc,
                                 is_active = :active{$imgSql} WHERE id = :id")
                         ->execute($params);
                     $success = 'Ürün güncellendi.';
@@ -93,31 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ':active' => $active,
                         ]);
                     $id = (int) $pdo->lastInsertId();
+                    $pdo->prepare('UPDATE products SET regulation_description=? WHERE id=?')->execute([$regDesc, $id]);
                     $success = 'Ürün eklendi. Teknik tablo ve regülasyonları aşağıdan ekleyebilirsin.';
                 }
 
-                // Ek görseller
-                if (!empty($_FILES['extra_images']['name'][0])) {
-                    $stmtSortImg = $pdo->prepare('SELECT IFNULL(MAX(sort_order),0)+1 FROM product_images WHERE product_id = ?');
-                    $stmtSortImg->execute([$id]);
-                    $sortImg = (int) $stmtSortImg->fetchColumn();
-                    foreach ($_FILES['extra_images']['name'] as $k => $fname2) {
-                        $single = [
-                            'name'     => $fname2,
-                            'type'     => $_FILES['extra_images']['type'][$k],
-                            'tmp_name' => $_FILES['extra_images']['tmp_name'][$k],
-                            'error'    => $_FILES['extra_images']['error'][$k],
-                            'size'     => $_FILES['extra_images']['size'][$k],
-                        ];
-                        if ($single['error'] === UPLOAD_ERR_OK) {
-                            $fn = upload_file($single, $uploadDir);
-                            if ($fn) {
-                                $pdo->prepare('INSERT INTO product_images (product_id, image, sort_order) VALUES (?, ?, ?)')
-                                    ->execute([$id, $uploadBase . $fn, $sortImg++]);
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -147,6 +129,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare('DELETE FROM products WHERE id = :id')->execute([':id' => $id]);
                 $pdo->prepare('DELETE FROM product_images WHERE product_id = :id')->execute([':id' => $id]);
                 $pdo->prepare('DELETE FROM product_regulations WHERE product_id = :id')->execute([':id' => $id]);
+                $pdo->prepare('DELETE FROM product_icon_picks WHERE product_id = :id')->execute([':id' => $id]);
+                $pdo->prepare('DELETE FROM product_regulation_picks WHERE product_id = :id')->execute([':id' => $id]);
                 $stmt = $pdo->prepare('SELECT id FROM product_spec_tables WHERE product_id = :id');
                 $stmt->execute([':id' => $id]);
                 foreach ($stmt->fetchAll() as $t) {
@@ -216,42 +200,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // ---- Regülasyon ekle ----
-        elseif (isset($_POST['add_regulation'])) {
-            $pid   = (int) ($_POST['product_id'] ?? 0);
-            $title = trim($_POST['reg_title'] ?? '');
-            if ($pid > 0 && $title !== '') {
-                $icon = null;
-                if (!empty($_FILES['reg_icon']['name'])) {
-                    $fn = upload_file($_FILES['reg_icon'], $uploadDir, ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
-                    if ($fn) {
-                        $icon = $uploadBase . $fn;
-                    }
+        // ---- İkon seçimleri kaydet ----
+        elseif (isset($_POST['save_icon_picks'])) {
+            $pid  = (int) ($_POST['product_id'] ?? 0);
+            $ids  = array_map('intval', (array)($_POST['icon_ids'] ?? []));
+            if ($pid > 0) {
+                $pdo->beginTransaction();
+                $pdo->prepare('DELETE FROM product_icon_picks WHERE product_id=?')->execute([$pid]);
+                $sort = 1;
+                $ins  = $pdo->prepare('INSERT INTO product_icon_picks (product_id, icon_id, sort_order) VALUES (?,?,?)');
+                foreach ($ids as $iid) {
+                    if ($iid > 0) $ins->execute([$pid, $iid, $sort++]);
                 }
-                $stmtSort = $pdo->prepare('SELECT IFNULL(MAX(sort_order),0)+1 FROM product_regulations WHERE product_id = ?');
-                $stmtSort->execute([$pid]);
-                $sort = (int) $stmtSort->fetchColumn();
-                $pdo->prepare('INSERT INTO product_regulations (product_id, title, icon, sort_order) VALUES (?, ?, ?, ?)')
-                    ->execute([$pid, $title, $icon, $sort]);
-                $success = 'Regülasyon eklendi.';
+                $pdo->commit();
+                $success = 'İkon seçimleri kaydedildi.';
             }
         }
 
-        // ---- Regülasyon sil ----
-        elseif (isset($_POST['delete_regulation'])) {
-            $rid = (int) ($_POST['reg_id'] ?? 0);
-            if ($rid > 0) {
-                $pdo->prepare('DELETE FROM product_regulations WHERE id = ?')->execute([$rid]);
-                $success = 'Regülasyon silindi.';
-            }
-        }
-
-        // ---- Regülasyon aktif/pasif ----
-        elseif (isset($_POST['toggle_regulation'])) {
-            $rid = (int) ($_POST['reg_id'] ?? 0);
-            if ($rid > 0) {
-                $pdo->prepare('UPDATE product_regulations SET is_active = NOT is_active WHERE id = ?')->execute([$rid]);
-                $success = 'Regülasyon durumu güncellendi.';
+        // ---- Regülasyon görsel seçimleri kaydet ----
+        elseif (isset($_POST['save_reg_picks'])) {
+            $pid  = (int) ($_POST['product_id'] ?? 0);
+            $ids  = array_map('intval', (array)($_POST['reg_ids'] ?? []));
+            if ($pid > 0) {
+                $pdo->beginTransaction();
+                $pdo->prepare('DELETE FROM product_regulation_picks WHERE product_id=?')->execute([$pid]);
+                $sort = 1;
+                $ins  = $pdo->prepare('INSERT INTO product_regulation_picks (product_id, regulation_image_id, sort_order) VALUES (?,?,?)');
+                foreach ($ids as $rid) {
+                    if ($rid > 0) $ins->execute([$pid, $rid, $sort++]);
+                }
+                $pdo->commit();
+                $success = 'Regülasyon seçimleri kaydedildi.';
             }
         }
 
@@ -335,11 +314,21 @@ try {
     $error = 'Kategori listesi alınamadı. Lütfen <a href="migrate.php">migrasyonu</a> çalıştırın.';
 }
 
-$editProduct = null;
-$specTables  = [];
-$regulations = [];
-$extraImages = [];
-$productDocs = [];
+$editProduct      = null;
+$specTables       = [];
+$extraImages      = [];
+$productDocs      = [];
+$catalogIcons     = [];
+$catalogRegImages = [];
+$pickedIconIds    = [];
+$pickedRegIds     = [];
+
+try {
+    $catalogIcons = $pdo->query('SELECT * FROM catalog_product_icons WHERE is_active=1 ORDER BY sort_order ASC, id ASC')->fetchAll();
+} catch (Throwable $_e) { $catalogIcons = []; }
+try {
+    $catalogRegImages = $pdo->query('SELECT * FROM catalog_regulation_images WHERE is_active=1 ORDER BY sort_order ASC, id ASC')->fetchAll();
+} catch (Throwable $_e) { $catalogRegImages = []; }
 
 if ($editId) {
     try {
@@ -366,28 +355,24 @@ if ($editId) {
         }
 
         try {
-            $stmt4 = $pdo->prepare('SELECT * FROM product_regulations WHERE product_id = ? ORDER BY sort_order ASC');
-            $stmt4->execute([$editId]);
-            $regulations = $stmt4->fetchAll();
-        } catch (Throwable $e) {
-            $regulations = [];
-        }
-
-        try {
-            $stmt5 = $pdo->prepare('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order ASC');
+            $stmt5 = $pdo->prepare('SELECT * FROM product_documents WHERE product_id = ? ORDER BY sort_order ASC');
             $stmt5->execute([$editId]);
-            $extraImages = $stmt5->fetchAll();
-        } catch (Throwable $e) {
-            $extraImages = [];
-        }
-
-        try {
-            $stmt6 = $pdo->prepare('SELECT * FROM product_documents WHERE product_id = ? ORDER BY sort_order ASC');
-            $stmt6->execute([$editId]);
-            $productDocs = $stmt6->fetchAll();
+            $productDocs = $stmt5->fetchAll();
         } catch (Throwable $e) {
             $productDocs = [];
         }
+
+        try {
+            $s = $pdo->prepare('SELECT icon_id FROM product_icon_picks WHERE product_id=? ORDER BY sort_order ASC');
+            $s->execute([$editId]);
+            $pickedIconIds = array_column($s->fetchAll(), 'icon_id');
+        } catch (Throwable $_e) { $pickedIconIds = []; }
+
+        try {
+            $s = $pdo->prepare('SELECT regulation_image_id FROM product_regulation_picks WHERE product_id=? ORDER BY sort_order ASC');
+            $s->execute([$editId]);
+            $pickedRegIds = array_column($s->fetchAll(), 'regulation_image_id');
+        } catch (Throwable $_e) { $pickedRegIds = []; }
 
         // Mevcut çevirileri yükle
         try {
@@ -586,18 +571,12 @@ include __DIR__ . '/partials_header.php';
                         <?php endif; ?>
                         <input type="file" name="main_image" class="form-control" accept="image/jpeg,image/png,image/webp">
                     </div>
+                    <?php if (isset($editProduct) && $editProduct): ?>
                     <div class="mb-3">
-                        <label class="form-label">Ek Görseller</label>
-                        <input type="file" name="extra_images[]" class="form-control" multiple accept="image/jpeg,image/png,image/webp">
-                        <div class="form-text">Birden fazla seçebilirsin.</div>
-                        <?php if (!empty($extraImages)): ?>
-                            <div class="d-flex flex-wrap gap-2 mt-2">
-                                <?php foreach ($extraImages as $img): ?>
-                                    <img src="<?= e('../' . $img['image']) ?>" height="48" class="rounded border">
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
+                        <label class="form-label">Regülasyon Açıklaması <span class="text-muted fw-normal small">(çeviri yok, tek dil)</span></label>
+                        <textarea name="regulation_description" class="form-control tinymce" rows="4"><?= e($editProduct['regulation_description'] ?? '') ?></textarea>
                     </div>
+                    <?php endif; ?>
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" name="is_active" id="prod_active"
                             <?= (!isset($editProduct) || !isset($editProduct['is_active']) || (int)$editProduct['is_active'] === 1) ? 'checked' : '' ?>>
@@ -774,63 +753,75 @@ include __DIR__ . '/partials_header.php';
         </div>
     </div>
 
-    <!-- Regülasyonlar -->
+    <!-- İkon Seçimi -->
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white"><strong>Regülasyonlar &amp; Sertifikalar</strong></div>
+            <div class="card-header bg-white d-flex align-items-center justify-content-between">
+                <strong>Ürün İkonları</strong>
+                <a href="catalog_icons.php" class="btn btn-xs btn-sm btn-outline-secondary py-0 small" target="_blank">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Kütüphaneyi Düzenle
+                </a>
+            </div>
             <div class="card-body">
-                <!-- Regülasyon ekle -->
-                <form method="post" enctype="multipart/form-data" class="mb-3">
-                    <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
-                    <input type="hidden" name="add_regulation" value="1">
-                    <input type="hidden" name="product_id" value="<?= e((string) $editProduct['id']) ?>">
-                    <div class="mb-2">
-                        <input type="text" name="reg_title" class="form-control form-control-sm" placeholder="Sertifika adı (zorunlu)" required>
-                    </div>
-                    <div class="mb-2">
-                        <input type="file" name="reg_icon" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp,image/svg+xml">
-                        <div class="form-text">İkon görseli (opsiyonel). PNG/SVG önerilir.</div>
-                    </div>
-                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">+ Regülasyon Ekle</button>
-                </form>
-
-                <?php if (!empty($regulations)): ?>
-                    <ul class="list-group list-group-flush">
-                        <?php foreach ($regulations as $reg): ?>
-                            <li class="list-group-item d-flex align-items-center justify-content-between py-2 <?= !(bool)$reg['is_active'] ? 'list-group-item-secondary' : '' ?>">
-                                <div class="d-flex align-items-center gap-2">
-                                    <?php if (!empty($reg['icon'])): ?>
-                                        <img src="<?= e('../' . $reg['icon']) ?>" height="24" class="rounded">
-                                    <?php endif; ?>
-                                    <div>
-                                        <div class="small"><?= e($reg['title']) ?></div>
-                                        <?php if (!(bool)$reg['is_active']): ?>
-                                            <span class="badge bg-secondary-subtle text-secondary border small">Pasif</span>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                <div class="d-flex gap-1">
-                                    <form method="post" class="d-inline">
-                                        <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
-                                        <input type="hidden" name="toggle_regulation" value="1">
-                                        <input type="hidden" name="reg_id" value="<?= e((string) $reg['id']) ?>">
-                                        <button class="btn btn-sm <?= (bool)$reg['is_active'] ? 'btn-outline-warning' : 'btn-outline-success' ?> py-0">
-                                            <?= (bool)$reg['is_active'] ? 'Pasif Yap' : 'Aktif Yap' ?>
-                                        </button>
-                                    </form>
-                                    <form method="post" class="d-inline">
-                                        <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
-                                        <input type="hidden" name="delete_regulation" value="1">
-                                        <input type="hidden" name="reg_id" value="<?= e((string) $reg['id']) ?>">
-                                        <button class="btn btn-sm btn-outline-danger py-0"
-                                                onclick="return confirm('Bu regülasyonu silmek istediğinize emin misiniz?')">Sil</button>
-                                    </form>
-                                </div>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
+                <?php if (empty($catalogIcons)): ?>
+                    <p class="text-muted small">Kütüphanede henüz ikon yok. <a href="catalog_icons.php">İkon kütüphanesine git</a> ve önce ikon ekle.</p>
                 <?php else: ?>
-                    <p class="text-muted small">Henüz regülasyon yok. Yukarıdan ekle.</p>
+                    <form method="post">
+                        <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
+                        <input type="hidden" name="save_icon_picks" value="1">
+                        <input type="hidden" name="product_id" value="<?= e((string) $editProduct['id']) ?>">
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <?php foreach ($catalogIcons as $ci): ?>
+                                <?php $checked = in_array((int)$ci['id'], array_map('intval', $pickedIconIds), true); ?>
+                                <label class="fx-pick-tile <?= $checked ? 'fx-pick-tile--on' : '' ?>" title="<?= e($ci['admin_label']) ?>">
+                                    <input type="checkbox" name="icon_ids[]" value="<?= e((string)$ci['id']) ?>" <?= $checked ? 'checked' : '' ?> class="d-none fx-pick-cb">
+                                    <img src="<?= e('../' . $ci['image_path']) ?>" alt="<?= e($ci['admin_label']) ?>">
+                                    <?php if ($ci['admin_label']): ?>
+                                        <span class="fx-pick-label"><?= e($ci['admin_label']) ?></span>
+                                    <?php endif; ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">Seçimi Kaydet</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Regülasyon Görsel Seçimi -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between">
+                <strong>Regülasyon / Sertifika Görselleri</strong>
+                <a href="catalog_regulation_images.php" class="btn btn-xs btn-sm btn-outline-secondary py-0 small" target="_blank">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Kütüphaneyi Düzenle
+                </a>
+            </div>
+            <div class="card-body">
+                <?php if (empty($catalogRegImages)): ?>
+                    <p class="text-muted small">Kütüphanede henüz regülasyon görseli yok. <a href="catalog_regulation_images.php">Kütüphaneye git</a> ve önce görsel ekle.</p>
+                <?php else: ?>
+                    <form method="post">
+                        <input type="hidden" name="csrf_token" value="<?= e($token) ?>">
+                        <input type="hidden" name="save_reg_picks" value="1">
+                        <input type="hidden" name="product_id" value="<?= e((string) $editProduct['id']) ?>">
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <?php foreach ($catalogRegImages as $cri): ?>
+                                <?php $checked = in_array((int)$cri['id'], array_map('intval', $pickedRegIds), true); ?>
+                                <label class="fx-pick-tile <?= $checked ? 'fx-pick-tile--on' : '' ?>" title="<?= e($cri['admin_label']) ?>">
+                                    <input type="checkbox" name="reg_ids[]" value="<?= e((string)$cri['id']) ?>" <?= $checked ? 'checked' : '' ?> class="d-none fx-pick-cb">
+                                    <img src="<?= e('../' . $cri['image_path']) ?>" alt="<?= e($cri['admin_label']) ?>">
+                                    <?php if ($cri['admin_label']): ?>
+                                        <span class="fx-pick-label"><?= e($cri['admin_label']) ?></span>
+                                    <?php endif; ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">Seçimi Kaydet</button>
+                    </form>
                 <?php endif; ?>
             </div>
         </div>

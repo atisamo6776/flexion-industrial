@@ -29,6 +29,16 @@ if ($tinyKey !== ''): ?>
   tinymce.init(opts);
 }());
 </script>
+<script>
+(function () {
+  document.querySelectorAll('.fx-pick-tile').forEach(function (tile) {
+    tile.addEventListener('change', function () {
+      var cb = tile.querySelector('.fx-pick-cb');
+      tile.classList.toggle('fx-pick-tile--on', cb ? cb.checked : false);
+    });
+  });
+}());
+</script>
 </body>
 </html>
 

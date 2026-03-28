@@ -67,6 +67,40 @@ require_password_change_if_needed();
         .badge.bg-primary { background-color: var(--fx-red) !important; }
         a.text-primary { color: var(--fx-red) !important; }
         a.text-primary:hover { color: var(--fx-red-dark) !important; }
+        /* ── İkon/Regülasyon pick tile ── */
+        .fx-pick-tile {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 72px;
+            padding: 6px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            background: #fff;
+        }
+        .fx-pick-tile img {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+        }
+        .fx-pick-label {
+            font-size: .6rem;
+            text-align: center;
+            color: #6b7280;
+            line-height: 1.2;
+            max-width: 66px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .fx-pick-tile--on {
+            border-color: var(--fx-red);
+            background: #fff5f5;
+        }
+        .fx-pick-tile:hover { border-color: #9ca3af; }
     </style>
 </head>
 <body>
@@ -94,6 +128,12 @@ require_password_change_if_needed();
                 </a>
                 <a href="products.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'products.php' ? 'active' : '' ?>">
                     <i class="bi bi-box-seam me-2"></i>Ürünler
+                </a>
+                <a href="catalog_icons.php" class="nav-link py-2 px-2 ps-4 <?= basename($_SERVER['PHP_SELF']) === 'catalog_icons.php' ? 'active' : '' ?>">
+                    <i class="bi bi-patch-check me-2"></i>İkon Kütüphanesi
+                </a>
+                <a href="catalog_regulation_images.php" class="nav-link py-2 px-2 ps-4 <?= basename($_SERVER['PHP_SELF']) === 'catalog_regulation_images.php' ? 'active' : '' ?>">
+                    <i class="bi bi-award me-2"></i>Regülasyon Görselleri
                 </a>
                 <a href="news.php" class="nav-link py-2 px-2 <?= basename($_SERVER['PHP_SELF']) === 'news.php' ? 'active' : '' ?>">
                     <i class="bi bi-newspaper me-2"></i>Haberler / Insights

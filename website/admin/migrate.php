@@ -120,6 +120,44 @@ $tableMigrations = [
         KEY `idx_product_id` (`product_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
+    'catalog_product_icons' => "CREATE TABLE `catalog_product_icons` (
+        `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `image_path` VARCHAR(255) NOT NULL,
+        `admin_label` VARCHAR(255) NOT NULL DEFAULT '',
+        `sort_order` INT NOT NULL DEFAULT 0,
+        `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+        PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'catalog_regulation_images' => "CREATE TABLE `catalog_regulation_images` (
+        `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `image_path` VARCHAR(255) NOT NULL,
+        `admin_label` VARCHAR(255) NOT NULL DEFAULT '',
+        `sort_order` INT NOT NULL DEFAULT 0,
+        `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+        PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'product_icon_picks' => "CREATE TABLE `product_icon_picks` (
+        `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `product_id` INT UNSIGNED NOT NULL,
+        `icon_id` INT UNSIGNED NOT NULL,
+        `sort_order` INT NOT NULL DEFAULT 0,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_prod_icon` (`product_id`,`icon_id`),
+        KEY `idx_product_id` (`product_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'product_regulation_picks' => "CREATE TABLE `product_regulation_picks` (
+        `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `product_id` INT UNSIGNED NOT NULL,
+        `regulation_image_id` INT UNSIGNED NOT NULL,
+        `sort_order` INT NOT NULL DEFAULT 0,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uk_prod_reg` (`product_id`,`regulation_image_id`),
+        KEY `idx_product_id` (`product_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
     'home_sections' => "CREATE TABLE `home_sections` (
         `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
         `section_type` VARCHAR(50) NOT NULL DEFAULT 'hero',
@@ -310,6 +348,8 @@ $columnMigrations = [
     ['table' => 'product_documents',   'column' => 'is_active', 'sql' => 'ALTER TABLE `product_documents` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
     // product_images
     ['table' => 'product_images',      'column' => 'sort_order','sql' => 'ALTER TABLE `product_images` ADD COLUMN `sort_order` INT NOT NULL DEFAULT 0'],
+    // products — regulation description (çeviri gerektirmeyen tek dil HTML)
+    ['table' => 'products', 'column' => 'regulation_description', 'sql' => 'ALTER TABLE `products` ADD COLUMN `regulation_description` LONGTEXT NULL'],
     // categories
     ['table' => 'categories', 'column' => 'is_active',          'sql' => 'ALTER TABLE `categories` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1'],
     ['table' => 'categories', 'column' => 'sort_order',         'sql' => 'ALTER TABLE `categories` ADD COLUMN `sort_order` INT NOT NULL DEFAULT 0'],
