@@ -305,7 +305,7 @@ try {
                                 <?php foreach ($documents as $doc): ?>
                                     <a href="<?= e(asset_url($doc['file_path'])) ?>" target="_blank" rel="noopener"
                                        class="fx-btn-pill-doc">
-                                        <span class="text-truncate"><?= e($doc['title']) ?></span>
+                                        <span><?= e($doc['title']) ?></span>
                                         <i class="bi bi-download" aria-hidden="true"></i>
                                     </a>
                                 <?php endforeach; ?>

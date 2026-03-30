@@ -81,8 +81,8 @@ body {
     border-color:     #c0101c;
 }
 
-/* Ürün detay — kapsül butonlar: 2 sütun akışı.
-   Sıra: 1) Bilgi al (sol üst), 2) ilk PDF (sağ üst), 3+) altta yarım/yarım */
+/* Ürün detay — kapsül butonlar: 2 sütun akışı masaüstü,
+   mobilde tek sütun; yazılar kesilmeden okunur. */
 .fx-product-pill-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -130,14 +130,16 @@ body {
 }
 .fx-btn-pill-doc > span {
     min-width: 0;
+    white-space: normal;
+    line-height: 1.3;
 }
 .fx-btn-pill-doc .bi-download {
     flex-shrink: 0;
     font-size: 1rem;
 }
 
-/* Çok dar ekranda tek sütun */
-@media (max-width: 380px) {
+/* Mobilde tek sütun, butonlar tam genişlik */
+@media (max-width: 576px) {
     .fx-product-pill-actions {
         grid-template-columns: 1fr;
     }
