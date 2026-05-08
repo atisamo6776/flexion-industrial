@@ -24,10 +24,15 @@ try {
 }
 
 $footerCols = [];
+$catalogPdfUrl = '/assets/uploads/05052026%20FLEXION.pdf';
 foreach ($footerLinksRaw as $fl) {
     $key = $fl['column_key'];
     if (!isset($footerCols[$key])) {
         $footerCols[$key] = ['label' => $fl['column_label'] ?: $key, 'links' => []];
+    }
+    // Footer'da "Catalog" linki her zaman yeni PDF'e gitsin.
+    if (mb_strtolower(trim((string)($fl['title'] ?? '')), 'UTF-8') === 'catalog') {
+        $fl['url'] = $catalogPdfUrl;
     }
     $footerCols[$key]['links'][] = $fl;
 }
